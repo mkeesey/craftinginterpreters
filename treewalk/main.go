@@ -67,10 +67,10 @@ func run(reader io.Reader) error {
 	return nil
 }
 
-func failed(line int, message string) {
-	report(line, "", message)
-}
+// func failed(line int, message string) {
+// 	report(line, "", message)
+// }
 
-func report(line int, where string, message string) {
-	fmt.Fprintf(os.Stderr, "[%d] Error %s: %s", line, where, message)
-}
+// func report(line int, where string, message string) {
+// 	fmt.Fprintf(os.Stderr, "[%d] Error %s: %s", line, where, message)
+// }
