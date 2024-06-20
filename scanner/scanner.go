@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"github.com/mkeesey/craftinginterpreters/token"
 )
@@ -69,6 +70,47 @@ func (s *Scanner) scanToken() error {
 		s.addToken(token.SEMICOLON)
 	case '*':
 		s.addToken(token.STAR)
+	case '!':
+		if s.match('=') {
+			s.addToken(token.BANG_EQUAL)
+		} else {
+			s.addToken(token.BANG)
+		}
+	case '=':
+		if s.match('=') {
+			s.addToken(token.EQUAL_EQUAL)
+		} else {
+			s.addToken(token.EQUAL)
+		}
+	case '<':
+		if s.match('=') {
+			s.addToken(token.LESS_EQUAL)
+		} else {
+			s.addToken(token.LESS)
+		}
+	case '>':
+		if s.match('=') {
+			s.addToken(token.GREATER_EQUAL)
+		} else {
+			s.addToken(token.GREATER)
+		}
+	case '/':
+		if s.match('/') {
+			for {
+				rune, _, err := s.reader.ReadRune()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming comment", err)
+				}
+				if rune == '\n' {
+					break
+				}
+			}
+		} else {
+			s.addToken(token.SLASH)
+		}
 	default:
 		return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
 	}
@@ -81,4 +123,19 @@ func (s *Scanner) addToken(tokenType token.TokenType) {
 
 func (s *Scanner) addTokenLiteral(tokenType token.TokenType, literal interface{}) {
 	s.tokens = append(s.tokens, token.NewToken(tokenType, s.currLexeme.String(), literal, s.line))
+}
+
+func (s *Scanner) match(expected rune) bool {
+	runeLength := utf8.RuneLen(expected)
+	bytes, err := s.reader.Peek(runeLength)
+	if err != nil {
+		return false
+	}
+	seen, _ := utf8.DecodeRune(bytes)
+	if seen != expected {
+		return false
+	}
+	s.currLexeme.WriteRune(seen)
+	s.reader.Discard(runeLength)
+	return true
 }
