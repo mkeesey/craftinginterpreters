@@ -19,4 +19,13 @@ func TestScanner(t *testing.T) {
 		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 0), tokens[2])
 		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[3])
 	})
+	t.Run("unknown char", func(t *testing.T) {
+		scanner := NewScanner(strings.NewReader("*$-"))
+		tokens, err := scanner.scanTokens()
+		require.NotNil(t, err) // unknown $
+		require.Len(t, tokens, 3)
+		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
+		require.Equal(t, token.NewToken(token.MINUS, "-", nil, 0), tokens[1])
+		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[2])
+	})
 }

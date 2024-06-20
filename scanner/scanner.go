@@ -6,13 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"unicode/utf8"
 
 	"github.com/mkeesey/craftinginterpreters/token"
 )
 
 type Scanner struct {
-	scan       *bufio.Scanner
+	reader     *bufio.Reader
 	tokens     []token.Token
 	currLexeme bytes.Buffer
 
@@ -20,18 +19,20 @@ type Scanner struct {
 }
 
 func NewScanner(reader io.Reader) *Scanner {
-	scan := bufio.NewScanner(reader)
-	scan.Split(bufio.ScanRunes)
+	read := bufio.NewReader(reader)
 	buf := bytes.Buffer{}
-	return &Scanner{scan: scan, currLexeme: buf}
+	return &Scanner{reader: read, currLexeme: buf}
 }
 
 func (s *Scanner) scanTokens() ([]token.Token, error) {
 	var allErrs error = nil
-	for s.scan.Scan() {
+	for {
 		s.currLexeme.Reset()
 		err := s.scanToken()
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			allErrs = errors.Join(allErrs, err)
 		}
 	}
@@ -41,7 +42,11 @@ func (s *Scanner) scanTokens() ([]token.Token, error) {
 }
 
 func (s *Scanner) scanToken() error {
-	rune, _ := utf8.DecodeRune(s.scan.Bytes())
+	rune, _, err := s.reader.ReadRune()
+	if err != nil {
+		return err
+	}
+
 	s.currLexeme.WriteRune(rune)
 	switch rune {
 	case '(':
