@@ -49,7 +49,7 @@ func TestScanner(t *testing.T) {
 		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[2])
 	})
 
-	t.Run("comments", func(t *testing.T) {
+	t.Run("slash", func(t *testing.T) {
 		type testcase struct {
 			title  string
 			input  string
@@ -58,8 +58,25 @@ func TestScanner(t *testing.T) {
 
 		testcases := []testcase{
 			{
+				title: "single slash",
+				input: "/*",
+				output: []token.Token{
+					token.NewToken(token.SLASH, "/", nil, 0),
+					token.NewToken(token.STAR, "*", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
 				title: "single line comment",
-				input: "*//this is a comment",
+				input: " * //this is a comment",
+				output: []token.Token{
+					token.NewToken(token.STAR, "*", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title: "single line comment without text",
+				input: " * //",
 				output: []token.Token{
 					token.NewToken(token.STAR, "*", nil, 0),
 					token.NewToken(token.EOF, "", nil, 0),
@@ -67,11 +84,11 @@ func TestScanner(t *testing.T) {
 			},
 			{
 				title: "multi line comment",
-				input: "*//this is a comment\n(",
+				input: "* //this is a comment\n (",
 				output: []token.Token{
 					token.NewToken(token.STAR, "*", nil, 0),
-					token.NewToken(token.LEFT_PAREN, "(", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.LEFT_PAREN, "(", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 		}

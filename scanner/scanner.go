@@ -38,7 +38,7 @@ func (s *Scanner) scanTokens() ([]token.Token, error) {
 		}
 	}
 
-	s.tokens = append(s.tokens, token.NewToken(token.EOF, "", nil, 0))
+	s.tokens = append(s.tokens, token.NewToken(token.EOF, "", nil, s.line))
 	return s.tokens, allErrs
 }
 
@@ -97,20 +97,25 @@ func (s *Scanner) scanToken() error {
 	case '/':
 		if s.match('/') {
 			for {
-				rune, _, err := s.reader.ReadRune()
+				bytes, err := s.reader.Peek(1)
 				if err != nil {
 					if errors.Is(err, io.EOF) {
 						break
 					}
 					return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming comment", err)
 				}
-				if rune == '\n' {
+				if bytes[0] == '\n' {
 					break
 				}
+				s.reader.Discard(1)
 			}
 		} else {
 			s.addToken(token.SLASH)
 		}
+	case ' ', '\r', '\t':
+		// ignore whitespace
+	case '\n':
+		s.line++
 	default:
 		return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
 	}
