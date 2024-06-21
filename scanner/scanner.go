@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"unicode/utf8"
 
 	"github.com/mkeesey/craftinginterpreters/token"
@@ -119,7 +120,11 @@ func (s *Scanner) scanToken() error {
 	case '"':
 		err = s.stringToken()
 	default:
-		return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
+		if isNumber(rune) {
+			s.numberToken()
+		} else {
+			return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
+		}
 	}
 	return err
 }
@@ -175,4 +180,60 @@ func (s *Scanner) stringToken() error {
 	s.addTokenLiteral(token.STRING, s.currLexeme.String())
 
 	return nil
+}
+
+func (s *Scanner) numberToken() error {
+	err := s.consumeDigits()
+	if err != nil {
+		return err
+	}
+
+	bytes, err := s.reader.Peek(2)
+	if err == nil {
+		if bytes[0] == '.' && isByteNumber(bytes[1]) {
+			s.reader.Discard(1)
+			s.currLexeme.WriteRune('.')
+			err = s.consumeDigits()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	literal, err := strconv.ParseFloat(s.currLexeme.String(), 64)
+	if err != nil {
+		return fmt.Errorf("[%d] Error %s: %w", s.line, "err parsing number", err)
+	}
+
+	s.addTokenLiteral(token.NUMBER, literal)
+	return nil
+}
+
+func (s *Scanner) consumeDigits() error {
+	for {
+		bytes, err := s.reader.Peek(1)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming number", err)
+		}
+		if !isByteNumber(bytes[0]) {
+			break
+		}
+		rune, _, err := s.reader.ReadRune()
+		if err != nil {
+			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming number rune", err)
+		}
+		s.currLexeme.WriteRune(rune)
+	}
+	return nil
+}
+
+func isNumber(rune rune) bool {
+	return rune >= '0' && rune <= '9'
+}
+
+func isByteNumber(val byte) bool {
+	return val >= '0' && val <= '9'
 }

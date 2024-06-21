@@ -98,10 +98,7 @@ func TestScanner(t *testing.T) {
 				scanner := NewScanner(strings.NewReader(testcase.input))
 				tokens, err := scanner.scanTokens()
 				require.Nil(t, err)
-				require.Len(t, tokens, len(testcase.output))
-				for i, expected := range testcase.output {
-					require.Equal(t, expected, tokens[i])
-				}
+				validateTokens(t, tokens, testcase.output)
 			})
 		}
 	})
@@ -145,16 +142,94 @@ world"`,
 			t.Run(testcase.title, func(t *testing.T) {
 				scanner := NewScanner(strings.NewReader(testcase.input))
 				tokens, err := scanner.scanTokens()
-				if testcase.expectError {
-					require.NotNil(t, err)
-				} else {
-					require.Nil(t, err)
-					require.Len(t, tokens, len(testcase.output))
-					for i, expected := range testcase.output {
-						require.Equal(t, expected, tokens[i])
-					}
-				}
+				validateResp(t, testcase.expectError, err, tokens, testcase.output)
 			})
 		}
 	})
+
+	t.Run("numbers", func(t *testing.T) {
+		type testcase struct {
+			title       string
+			input       string
+			expectError bool
+			output      []token.Token
+		}
+
+		testcases := []testcase{
+			{
+				title:       "single digit",
+				input:       "1",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.NUMBER, "1", 1.0, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "simple number",
+				input:       "123",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.NUMBER, "123", 123.0, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "decimal",
+				input:       "123.456",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.NUMBER, "123.456", 123.456, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "trailing dot",
+				input:       "123.",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.NUMBER, "123", 123.0, 0),
+					token.NewToken(token.DOT, ".", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "dot without number",
+				input:       `123."hello"`,
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.NUMBER, "123", 123.0, 0),
+					token.NewToken(token.DOT, ".", nil, 0),
+					token.NewToken(token.STRING, "hello", "hello", 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+		}
+
+		for _, testcase := range testcases {
+			t.Run(testcase.title, func(t *testing.T) {
+				scanner := NewScanner(strings.NewReader(testcase.input))
+				tokens, err := scanner.scanTokens()
+				validateResp(t, testcase.expectError, err, tokens, testcase.output)
+			})
+		}
+	})
+}
+
+func validateResp(t *testing.T, expectErr bool, err error, tokens []token.Token, expected []token.Token) {
+	t.Helper()
+	if expectErr {
+		require.NotNil(t, err)
+	} else {
+		require.Nil(t, err)
+		validateTokens(t, tokens, expected)
+	}
+}
+
+func validateTokens(t *testing.T, tokens []token.Token, expected []token.Token) {
+	t.Helper()
+	require.Len(t, tokens, len(expected))
+	for i, expected := range expected {
+		require.Equal(t, expected, tokens[i])
+	}
 }
