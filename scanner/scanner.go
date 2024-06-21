@@ -26,7 +26,7 @@ func NewScanner(reader io.Reader) *Scanner {
 }
 
 func (s *Scanner) scanTokens() ([]token.Token, error) {
-	var allErrs error = nil
+	var allErrs []error
 	for {
 		s.currLexeme.Reset()
 		err := s.scanToken()
@@ -34,12 +34,12 @@ func (s *Scanner) scanTokens() ([]token.Token, error) {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			allErrs = errors.Join(allErrs, err)
+			allErrs = append(allErrs, err)
 		}
 	}
 
 	s.tokens = append(s.tokens, token.NewToken(token.EOF, "", nil, s.line))
-	return s.tokens, allErrs
+	return s.tokens, errors.Join(allErrs...)
 }
 
 func (s *Scanner) scanToken() error {
@@ -116,10 +116,12 @@ func (s *Scanner) scanToken() error {
 		// ignore whitespace
 	case '\n':
 		s.line++
+	case '"':
+		err = s.stringToken()
 	default:
 		return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
 	}
-	return nil
+	return err
 }
 
 func (s *Scanner) addToken(tokenType token.TokenType) {
@@ -143,4 +145,34 @@ func (s *Scanner) match(expected rune) bool {
 	s.currLexeme.WriteRune(seen)
 	s.reader.Discard(runeLength)
 	return true
+}
+
+func (s *Scanner) stringToken() error {
+	s.currLexeme.Reset() // remove leading quote
+	for {
+		bytes, err := s.reader.Peek(1)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return fmt.Errorf("[%d] Error %s: %s", s.line, "Unterminated string", s.currLexeme.String())
+			}
+			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming string", err)
+		}
+		if bytes[0] == '"' {
+			s.reader.Discard(1) // skip closing quote
+			break
+		}
+
+		if bytes[0] == '\n' {
+			s.line++
+		}
+		rune, _, err := s.reader.ReadRune()
+		if err != nil {
+			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming string", err)
+		}
+		s.currLexeme.WriteRune(rune)
+	}
+
+	s.addTokenLiteral(token.STRING, s.currLexeme.String())
+
+	return nil
 }
