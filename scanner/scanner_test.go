@@ -255,6 +255,35 @@ world"`,
 					token.NewToken(token.EOF, "", nil, 0),
 				},
 			},
+			{
+				title:       "identifier with underscore",
+				input:       "hello_world",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "hello_world", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "identifier complex",
+				input:       "_he9llo_world",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "identifier and keywords",
+				input:       "_he9llo_world or waffles",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 0),
+					token.NewToken(token.OR, "or", nil, 0),
+					token.NewToken(token.IDENTIFIER, "waffles", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
 		}
 
 		for _, testcase := range testcases {

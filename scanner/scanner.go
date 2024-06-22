@@ -123,7 +123,7 @@ func (s *Scanner) scanToken() error {
 	default:
 		if isNumber(rune) {
 			s.numberToken()
-		} else if unicode.IsLetter(rune) {
+		} else if isAlpha(rune) {
 			err = s.identifierToken()
 		} else {
 			return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
@@ -242,14 +242,20 @@ func (s *Scanner) identifierToken() error {
 			}
 			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming identifier rune", err)
 		}
-		if !unicode.IsLetter(rune) {
+		if !isAlphaNumeric(rune) {
 			s.reader.UnreadRune()
 			break
 		}
 		s.currLexeme.WriteRune(rune)
 	}
 
-	s.addToken(token.IDENTIFIER)
+	identifier := s.currLexeme.String()
+	tokenType, ok := keywords[identifier]
+	if ok {
+		s.addToken(tokenType)
+	} else {
+		s.addToken(token.IDENTIFIER)
+	}
 
 	return nil
 }
@@ -260,4 +266,12 @@ func isNumber(rune rune) bool {
 
 func isByteNumber(val byte) bool {
 	return val >= '0' && val <= '9'
+}
+
+func isAlpha(rune rune) bool {
+	return unicode.IsLetter(rune) || rune == '_'
+}
+
+func isAlphaNumeric(rune rune) bool {
+	return isAlpha(rune) || isNumber(rune)
 }
