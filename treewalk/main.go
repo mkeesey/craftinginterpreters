@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/mkeesey/craftinginterpreters/scanner"
 )
 
 func main() {
@@ -58,12 +60,12 @@ func runPrompt() error {
 }
 
 func run(reader io.Reader) error {
-	s := bufio.NewScanner(reader)
-	s.Split(bufio.ScanWords)
-	//s.Init(reader)
-	for s.Scan() {
-		fmt.Println(s.Text())
+	scan := scanner.NewScanner(reader)
+	tokens, err := scan.ScanTokens()
+	if err != nil {
+		return fmt.Errorf("Error scanning tokens: %w", err)
 	}
+	fmt.Printf("%+v\n", tokens)
 	return nil
 }
 

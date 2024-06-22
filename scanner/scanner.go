@@ -27,7 +27,7 @@ func NewScanner(reader io.Reader) *Scanner {
 	return &Scanner{reader: read, currLexeme: buf}
 }
 
-func (s *Scanner) scanTokens() ([]token.Token, error) {
+func (s *Scanner) ScanTokens() ([]token.Token, error) {
 	var allErrs []error
 	for {
 		s.currLexeme.Reset()

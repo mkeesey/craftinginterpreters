@@ -11,7 +11,7 @@ import (
 func TestScanner(t *testing.T) {
 	t.Run("single chars only", func(t *testing.T) {
 		scanner := NewScanner(strings.NewReader("*+("))
-		tokens, err := scanner.scanTokens()
+		tokens, err := scanner.ScanTokens()
 		require.Nil(t, err)
 		require.Len(t, tokens, 4)
 		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
@@ -21,7 +21,7 @@ func TestScanner(t *testing.T) {
 	})
 	t.Run("unknown char", func(t *testing.T) {
 		scanner := NewScanner(strings.NewReader("*$-"))
-		tokens, err := scanner.scanTokens()
+		tokens, err := scanner.ScanTokens()
 		require.NotNil(t, err) // unknown $
 		require.Len(t, tokens, 3)
 		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
@@ -31,7 +31,7 @@ func TestScanner(t *testing.T) {
 
 	t.Run("bang noequal", func(t *testing.T) {
 		scanner := NewScanner(strings.NewReader("!*("))
-		tokens, err := scanner.scanTokens()
+		tokens, err := scanner.ScanTokens()
 		require.Nil(t, err)
 		require.Len(t, tokens, 4)
 		require.Equal(t, token.NewToken(token.BANG, "!", nil, 0), tokens[0])
@@ -41,7 +41,7 @@ func TestScanner(t *testing.T) {
 	})
 	t.Run("bang equal", func(t *testing.T) {
 		scanner := NewScanner(strings.NewReader("!=("))
-		tokens, err := scanner.scanTokens()
+		tokens, err := scanner.ScanTokens()
 		require.Nil(t, err)
 		require.Len(t, tokens, 3)
 		require.Equal(t, token.NewToken(token.BANG_EQUAL, "!=", nil, 0), tokens[0])
@@ -96,7 +96,7 @@ func TestScanner(t *testing.T) {
 			t.Run(testcase.title, func(t *testing.T) {
 
 				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.scanTokens()
+				tokens, err := scanner.ScanTokens()
 				require.Nil(t, err)
 				validateTokens(t, tokens, testcase.output)
 			})
@@ -141,7 +141,7 @@ world"`,
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
 				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.scanTokens()
+				tokens, err := scanner.ScanTokens()
 				validateResp(t, testcase.expectError, err, tokens, testcase.output)
 			})
 		}
@@ -209,7 +209,7 @@ world"`,
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
 				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.scanTokens()
+				tokens, err := scanner.ScanTokens()
 				validateResp(t, testcase.expectError, err, tokens, testcase.output)
 			})
 		}
@@ -289,7 +289,7 @@ world"`,
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
 				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.scanTokens()
+				tokens, err := scanner.ScanTokens()
 				validateResp(t, testcase.expectError, err, tokens, testcase.output)
 			})
 		}
