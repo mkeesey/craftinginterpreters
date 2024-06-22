@@ -2,11 +2,11 @@ package scanner
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -16,14 +16,14 @@ import (
 type Scanner struct {
 	reader     *bufio.Reader
 	tokens     []token.Token
-	currLexeme bytes.Buffer
+	currLexeme strings.Builder
 
 	line int
 }
 
 func NewScanner(reader io.Reader) *Scanner {
 	read := bufio.NewReader(reader)
-	buf := bytes.Buffer{}
+	buf := strings.Builder{}
 	return &Scanner{reader: read, currLexeme: buf}
 }
 
