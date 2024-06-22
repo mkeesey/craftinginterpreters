@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/mkeesey/craftinginterpreters/token"
@@ -122,6 +123,8 @@ func (s *Scanner) scanToken() error {
 	default:
 		if isNumber(rune) {
 			s.numberToken()
+		} else if unicode.IsLetter(rune) {
+			err = s.identifierToken()
 		} else {
 			return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
 		}
@@ -227,6 +230,27 @@ func (s *Scanner) consumeDigits() error {
 		}
 		s.currLexeme.WriteRune(rune)
 	}
+	return nil
+}
+
+func (s *Scanner) identifierToken() error {
+	for {
+		rune, _, err := s.reader.ReadRune()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming identifier rune", err)
+		}
+		if !unicode.IsLetter(rune) {
+			s.reader.UnreadRune()
+			break
+		}
+		s.currLexeme.WriteRune(rune)
+	}
+
+	s.addToken(token.IDENTIFIER)
+
 	return nil
 }
 

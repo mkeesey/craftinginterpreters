@@ -214,6 +214,57 @@ world"`,
 			})
 		}
 	})
+
+	t.Run("identifiers", func(t *testing.T) {
+
+		type testcase struct {
+			title       string
+			input       string
+			expectError bool
+			output      []token.Token
+		}
+
+		testcases := []testcase{
+			{
+				title:       "simple identifier",
+				input:       "hello",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "multiple identifier",
+				input:       "hello world",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
+					token.NewToken(token.IDENTIFIER, "world", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+			{
+				title:       "identifier followed by dot",
+				input:       "hello.world",
+				expectError: false,
+				output: []token.Token{
+					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
+					token.NewToken(token.DOT, ".", nil, 0),
+					token.NewToken(token.IDENTIFIER, "world", nil, 0),
+					token.NewToken(token.EOF, "", nil, 0),
+				},
+			},
+		}
+
+		for _, testcase := range testcases {
+			t.Run(testcase.title, func(t *testing.T) {
+				scanner := NewScanner(strings.NewReader(testcase.input))
+				tokens, err := scanner.scanTokens()
+				validateResp(t, testcase.expectError, err, tokens, testcase.output)
+			})
+		}
+	})
 }
 
 func validateResp(t *testing.T, expectErr bool, err error, tokens []token.Token, expected []token.Token) {
