@@ -29,6 +29,7 @@ func main() {
 			[]Field{
 				{"Left", "Expr"},
 				{"Operator", "token.Token"},
+				{"Right", "Expr"},
 			},
 		},
 		{
@@ -40,7 +41,7 @@ func main() {
 		{
 			"Literal",
 			[]Field{
-				{"value", "any"},
+				{"Value", "any"},
 			},
 		},
 		{
@@ -77,17 +78,30 @@ var (
 package ast
 
 import (
+	"fmt"
+
 	"github.com/mkeesey/craftinginterpreters/token"
 )
 
-type Visitor interface {
+type Visitor[T any] interface {
 {{- range . }}
-	Visit{{ .Name }}(*{{ .Name }}) Visitor
+	Visit{{ .Name }}(*{{ .Name }}) T
 {{- end }}
 }
 
+func Visit[T any](expr Expr, visitor Visitor[T]) T {
+	switch n := expr.(type) {
+{{- range . }}
+	case *{{ .Name }}:
+		return visitor.Visit{{ .Name }}(n)
+{{- end }}
+	default:
+		panic(fmt.Sprintf("Unknown expression type %T", expr))
+	}
+}
+
 type Expr interface {
-	Accept(Visitor) Visitor
+	expr()
 }
 
 {{ range . -}}
@@ -97,9 +111,7 @@ type {{ .Name }} struct {
 {{- end }}
 }
 
-func (e *{{.Name}}) Accept(visitor Visitor) Visitor {
-	return visitor.Visit{{ .Name }}(e)
-}
+func (b *{{ .Name }}) expr() {}
 
 {{ end }}
 `

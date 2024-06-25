@@ -1,41 +1,48 @@
 package ast
 
+import (
+	"fmt"
+	"strings"
+)
+
 //go:generate go run ../bin/genast/genast.go .
 
-// type PrintVisitor struct {
-// 	builder strings.Builder
-// }
+type PrintVisitor struct {
+}
 
-// func (p *PrintVisitor) Print(e Expr) string {
-// 	return e.Accept(p)
-// }
+func (p *PrintVisitor) Print(e Expr) string {
+	return Visit(e, p)
+}
 
-// func (p *PrintVisitor) VisitBinary(e *Binary) Visitor {
-// 	return p
-// }
+func (p *PrintVisitor) VisitBinary(e *Binary) string {
+	return p.parenthesize(e.Operator.Lexeme, e.Left, e.Right)
+}
 
-// func (p *PrintVisitor) VisitGrouping(e *Grouping) Visitor {
-// 	return p
-// }
+func (p *PrintVisitor) VisitGrouping(e *Grouping) string {
+	return p.parenthesize("group", e.Expression)
+}
 
-// func (p *PrintVisitor) VisitLiteral(e *Literal) Visitor {
-// 	return p
-// }
+func (p *PrintVisitor) VisitLiteral(e *Literal) string {
+	if e.Value == nil {
+		return "nil"
+	}
+	return fmt.Sprint(e.Value)
+}
 
-// func (p *PrintVisitor) VisitUnary(e *Unary) Visitor {
-// 	return p
-// }
+func (p *PrintVisitor) VisitUnary(e *Unary) string {
+	return p.parenthesize(e.Operator.Lexeme, e.Right)
+}
 
-// func (p *PrintVisitor) parenthesize(name string, expr ...Expr) string {
-// 	p.builder.Reset()
+func (p *PrintVisitor) parenthesize(name string, expr ...Expr) string {
+	builder := strings.Builder{}
 
-// 	p.builder.WriteString("(")
-// 	p.builder.WriteString(name)
-// 	for _, e := range expr {
-// 		p.builder.WriteString(" ")
-// 		p.builder.WriteString(e.Accept(p).(string))
-// 	}
-// 	p.builder.WriteString(")")
+	builder.WriteString("(")
+	builder.WriteString(name)
+	for _, e := range expr {
+		builder.WriteString(" ")
+		builder.WriteString(Visit(e, p))
+	}
+	builder.WriteString(")")
 
-// 	return p.builder.String()
-// }
+	return builder.String()
+}

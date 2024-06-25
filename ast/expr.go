@@ -2,52 +2,62 @@
 package ast
 
 import (
+	"fmt"
+
 	"github.com/mkeesey/craftinginterpreters/token"
 )
 
-type Visitor interface {
-	VisitBinary(*Binary) Visitor
-	VisitGrouping(*Grouping) Visitor
-	VisitLiteral(*Literal) Visitor
-	VisitUnary(*Unary) Visitor
+type Visitor[T any] interface {
+	VisitBinary(*Binary) T
+	VisitGrouping(*Grouping) T
+	VisitLiteral(*Literal) T
+	VisitUnary(*Unary) T
+}
+
+func Visit[T any](expr Expr, visitor Visitor[T]) T {
+	switch n := expr.(type) {
+	case *Binary:
+		return visitor.VisitBinary(n)
+	case *Grouping:
+		return visitor.VisitGrouping(n)
+	case *Literal:
+		return visitor.VisitLiteral(n)
+	case *Unary:
+		return visitor.VisitUnary(n)
+	default:
+		panic(fmt.Sprintf("Unknown expression type %T", expr))
+	}
 }
 
 type Expr interface {
-	Accept(Visitor) Visitor
+	expr()
 }
 
 type Binary struct {
 	Left Expr
 	Operator token.Token
+	Right Expr
 }
 
-func (e *Binary) Accept(visitor Visitor) Visitor {
-	return visitor.VisitBinary(e)
-}
+func (b *Binary) expr() {}
 
 type Grouping struct {
 	Expression Expr
 }
 
-func (e *Grouping) Accept(visitor Visitor) Visitor {
-	return visitor.VisitGrouping(e)
-}
+func (b *Grouping) expr() {}
 
 type Literal struct {
-	value any
+	Value any
 }
 
-func (e *Literal) Accept(visitor Visitor) Visitor {
-	return visitor.VisitLiteral(e)
-}
+func (b *Literal) expr() {}
 
 type Unary struct {
 	Operator token.Token
 	Right Expr
 }
 
-func (e *Unary) Accept(visitor Visitor) Visitor {
-	return visitor.VisitUnary(e)
-}
+func (b *Unary) expr() {}
 
 
