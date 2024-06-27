@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//go:generate go run ../bin/genast/genast.go .
+//go:generate go run ../../bin/genast/genast.go .
 
 type PrintVisitor struct {
 }

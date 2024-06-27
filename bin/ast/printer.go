@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/mkeesey/craftinginterpreters/ast"
-	"github.com/mkeesey/craftinginterpreters/token"
+	"github.com/mkeesey/craftinginterpreters/pkg/ast"
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
 func main() {

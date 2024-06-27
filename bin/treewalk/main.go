@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mkeesey/craftinginterpreters/scanner"
+	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 )
 
 func main() {

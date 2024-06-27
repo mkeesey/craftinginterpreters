@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mkeesey/craftinginterpreters/token"
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 

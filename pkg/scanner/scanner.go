@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/mkeesey/craftinginterpreters/token"
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
 type Scanner struct {

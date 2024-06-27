@@ -1,6 +1,6 @@
 package scanner
 
-import "github.com/mkeesey/craftinginterpreters/token"
+import "github.com/mkeesey/craftinginterpreters/pkg/token"
 
 var (
 	keywords = map[string]token.TokenType{

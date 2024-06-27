@@ -80,7 +80,7 @@ package ast
 import (
 	"fmt"
 
-	"github.com/mkeesey/craftinginterpreters/token"
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
 type Visitor[T any] interface {
