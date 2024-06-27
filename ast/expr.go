@@ -35,7 +35,7 @@ type Expr interface {
 
 type Binary struct {
 	Left Expr
-	Operator token.Token
+	Operator *token.Token
 	Right Expr
 }
 
@@ -54,7 +54,7 @@ type Literal struct {
 func (b *Literal) expr() {}
 
 type Unary struct {
-	Operator token.Token
+	Operator *token.Token
 	Right Expr
 }
 

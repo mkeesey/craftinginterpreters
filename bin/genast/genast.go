@@ -28,7 +28,7 @@ func main() {
 			"Binary",
 			[]Field{
 				{"Left", "Expr"},
-				{"Operator", "token.Token"},
+				{"Operator", "*token.Token"},
 				{"Right", "Expr"},
 			},
 		},
@@ -47,7 +47,7 @@ func main() {
 		{
 			"Unary",
 			[]Field{
-				{"Operator", "token.Token"},
+				{"Operator", "*token.Token"},
 				{"Right", "Expr"},
 			},
 		},

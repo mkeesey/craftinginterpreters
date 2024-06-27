@@ -9,10 +9,10 @@ type Token struct {
 	line    int
 }
 
-func NewToken(tokenType TokenType, lexeme string, literal interface{}, line int) Token {
-	return Token{Type: tokenType, Lexeme: lexeme, Literal: literal, line: line}
+func NewToken(tokenType TokenType, lexeme string, literal interface{}, line int) *Token {
+	return &Token{Type: tokenType, Lexeme: lexeme, Literal: literal, line: line}
 }
 
-func (t Token) String() string {
+func (t *Token) String() string {
 	return fmt.Sprintf("{%v %s %v}", t.Type, t.Lexeme, t.Literal)
 }

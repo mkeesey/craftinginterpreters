@@ -68,11 +68,3 @@ func run(reader io.Reader) error {
 	fmt.Printf("%+v\n", tokens)
 	return nil
 }
-
-// func failed(line int, message string) {
-// 	report(line, "", message)
-// }
-
-// func report(line int, where string, message string) {
-// 	fmt.Fprintf(os.Stderr, "[%d] Error %s: %s", line, where, message)
-// }
