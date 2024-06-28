@@ -74,7 +74,12 @@ func run(reader io.Reader) error {
 		return err
 	}
 
-	visitor := ast.PrintVisitor{}
-	fmt.Println(visitor.Print(expr))
+	visitor := ast.NewInterpreter()
+	ret, err := visitor.Interpret(expr)
+	if err != nil {
+		// TODO - distinguish runtime from parse errors for exit codes
+		return err
+	}
+	fmt.Printf("%v\n", ret)
 	return nil
 }
