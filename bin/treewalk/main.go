@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/ast"
+	"github.com/mkeesey/craftinginterpreters/pkg/parser"
 	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 )
 
@@ -65,6 +67,14 @@ func run(reader io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("Error scanning tokens: %w", err)
 	}
-	fmt.Printf("%+v\n", tokens)
+
+	parser := parser.NewParser(tokens)
+	expr, err := parser.Parse()
+	if err != nil {
+		return err
+	}
+
+	visitor := ast.PrintVisitor{}
+	fmt.Println(visitor.Print(expr))
 	return nil
 }
