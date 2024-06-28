@@ -54,7 +54,7 @@ func runPrompt() error {
 		reader.Reset(line)
 		err = run(reader)
 		if err != nil {
-			//TODO call handler
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
 	}
 }

@@ -3,13 +3,13 @@ package scanner
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
@@ -104,7 +104,7 @@ func (s *Scanner) scanToken() error {
 					if errors.Is(err, io.EOF) {
 						break
 					}
-					return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming comment", err)
+					return failure.Wrap(s.line, "err consuming comment", err)
 				}
 				if bytes[0] == '\n' {
 					break
@@ -126,7 +126,7 @@ func (s *Scanner) scanToken() error {
 		} else if isAlpha(rune) {
 			err = s.identifierToken()
 		} else {
-			return fmt.Errorf("[%d] Error %s: %s", s.line, "", "Unexpected character")
+			return failure.Error(s.line, "unexpected character")
 		}
 	}
 	return err
@@ -161,9 +161,9 @@ func (s *Scanner) stringToken() error {
 		bytes, err := s.reader.Peek(1)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return fmt.Errorf("[%d] Error %s: %s", s.line, "Unterminated string", s.currLexeme.String())
+				return failure.Report(s.line, s.currLexeme.String(), "unterminated string")
 			}
-			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming string", err)
+			return failure.Wrap(s.line, "err consuming string", err)
 		}
 		if bytes[0] == '"' {
 			s.reader.Discard(1) // skip closing quote
@@ -175,7 +175,7 @@ func (s *Scanner) stringToken() error {
 		}
 		rune, _, err := s.reader.ReadRune()
 		if err != nil {
-			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming string", err)
+			return failure.Wrap(s.line, "err consuming string", err)
 		}
 		s.currLexeme.WriteRune(rune)
 	}
@@ -205,7 +205,7 @@ func (s *Scanner) numberToken() error {
 
 	literal, err := strconv.ParseFloat(s.currLexeme.String(), 64)
 	if err != nil {
-		return fmt.Errorf("[%d] Error %s: %w", s.line, "err parsing number", err)
+		return failure.Wrap(s.line, "err parsing number", err)
 	}
 
 	s.addTokenLiteral(token.NUMBER, literal)
@@ -219,14 +219,14 @@ func (s *Scanner) consumeDigits() error {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming number", err)
+			return failure.Wrap(s.line, "err consuming number", err)
 		}
 		if !isByteNumber(bytes[0]) {
 			break
 		}
 		rune, _, err := s.reader.ReadRune()
 		if err != nil {
-			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming number rune", err)
+			return failure.Wrap(s.line, "err consuming number rune", err)
 		}
 		s.currLexeme.WriteRune(rune)
 	}
@@ -240,7 +240,7 @@ func (s *Scanner) identifierToken() error {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return fmt.Errorf("[%d] Error %s: %w", s.line, "err consuming identifier rune", err)
+			return failure.Wrap(s.line, "err consuming identifier rune", err)
 		}
 		if !isAlphaNumeric(rune) {
 			s.reader.UnreadRune()
