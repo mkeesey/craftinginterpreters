@@ -7,14 +7,14 @@ import (
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
-type Visitor[T any] interface {
+type ExprVisitor[T any] interface {
 	VisitBinary(*Binary) T
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
 	VisitUnary(*Unary) T
 }
 
-func Visit[T any](expr Expr, visitor Visitor[T]) T {
+func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 	switch n := expr.(type) {
 	case *Binary:
 		return visitor.VisitBinary(n)

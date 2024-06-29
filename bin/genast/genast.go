@@ -7,6 +7,13 @@ import (
 	"path/filepath"
 )
 
+type AST struct {
+	TypeName      string
+	LowerTypeName string
+	Types         []Types
+	Imports       []string
+}
+
 type Field struct {
 	Name string
 	Type string
@@ -23,7 +30,7 @@ func main() {
 		os.Exit(64)
 	}
 
-	astTypes := []Types{
+	exprTypes := []Types{
 		{
 			"Binary",
 			[]Field{
@@ -53,11 +60,42 @@ func main() {
 		},
 	}
 
-	defineAst(os.Args[1], "expr", astTypes)
+	exprAst := AST{
+		TypeName:      "Expr",
+		LowerTypeName: "expr",
+		Types:         exprTypes,
+		Imports:       []string{"github.com/mkeesey/craftinginterpreters/pkg/token"},
+	}
+
+	defineAst(os.Args[1], exprAst)
+
+	stmtTypes := []Types{
+		{
+			"Expression",
+			[]Field{
+				{"Expression", "Expr"},
+			},
+		},
+		{
+			"Print",
+			[]Field{
+				{"Expression", "Expr"},
+			},
+		},
+	}
+
+	stmtAst := AST{
+		TypeName:      "Stmt",
+		LowerTypeName: "stmt",
+		Types:         stmtTypes,
+		Imports:       []string{},
+	}
+
+	defineAst(os.Args[1], stmtAst)
 }
 
-func defineAst(outputDir string, basename string, types []Types) {
-	path := filepath.Join(outputDir, basename+".go")
+func defineAst(outputDir string, ast AST) {
+	path := filepath.Join(outputDir, ast.LowerTypeName+".go")
 	file, err := os.Create(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create file: %s\n", path)
@@ -66,9 +104,9 @@ func defineAst(outputDir string, basename string, types []Types) {
 	defer file.Close()
 
 	tmpl := template.Must(template.New("ast").Parse(tmplBody))
-	err = tmpl.Execute(file, types)
+	err = tmpl.Execute(file, ast)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write to file: %s\n", path)
+		fmt.Fprintf(os.Stderr, "Failed to write to file: %s\n%s", path, err)
 		os.Exit(1)
 	}
 }
@@ -79,39 +117,42 @@ package ast
 
 import (
 	"fmt"
-
-	"github.com/mkeesey/craftinginterpreters/pkg/token"
+{{- if .Imports }}
+{{ range .Imports }}
+	"{{ . }}"
+{{- end }}
+{{- end }}
 )
 
-type Visitor[T any] interface {
-{{- range . }}
+type {{ .TypeName }}Visitor[T any] interface {
+{{- range .Types }}
 	Visit{{ .Name }}(*{{ .Name }}) T
 {{- end }}
 }
 
-func Visit[T any](expr Expr, visitor Visitor[T]) T {
-	switch n := expr.(type) {
-{{- range . }}
+func Visit{{ .TypeName }}[T any]({{ .LowerTypeName }} {{ .TypeName }}, visitor {{ .TypeName }}Visitor[T]) T {
+	switch n := {{ .LowerTypeName }}.(type) {
+{{- range .Types }}
 	case *{{ .Name }}:
 		return visitor.Visit{{ .Name }}(n)
 {{- end }}
 	default:
-		panic(fmt.Sprintf("Unknown expression type %T", expr))
+		panic(fmt.Sprintf("Unknown expression type %T", {{ .LowerTypeName }}))
 	}
 }
 
-type Expr interface {
-	expr()
+type {{ .TypeName }} interface {
+	{{ .LowerTypeName }}()
 }
 
-{{ range . -}}
+{{ range .Types -}}
 type {{ .Name }} struct {
 {{- range .Fields }}
 	{{ .Name }} {{ .Type }}
 {{- end }}
 }
 
-func (b *{{ .Name }}) expr() {}
+func (b *{{ .Name }}) {{ $.LowerTypeName }}() {}
 
 {{ end }}
 `

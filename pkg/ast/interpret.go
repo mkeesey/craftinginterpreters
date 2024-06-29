@@ -91,7 +91,7 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 }
 
 func (p *TreeWalkInterpreter) evaluate(e Expr) interface{} {
-	return Visit(e, p)
+	return VisitExpr(e, p)
 }
 
 func isTruthy(value interface{}) bool {

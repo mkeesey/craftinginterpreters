@@ -9,7 +9,7 @@ type PrintVisitor struct {
 }
 
 func (p *PrintVisitor) Print(e Expr) string {
-	return Visit(e, p)
+	return VisitExpr(e, p)
 }
 
 func (p *PrintVisitor) VisitBinary(e *Binary) string {
@@ -38,7 +38,7 @@ func (p *PrintVisitor) parenthesize(name string, expr ...Expr) string {
 	builder.WriteString(name)
 	for _, e := range expr {
 		builder.WriteString(" ")
-		builder.WriteString(Visit(e, p))
+		builder.WriteString(VisitExpr(e, p))
 	}
 	builder.WriteString(")")
 
