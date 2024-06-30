@@ -8,10 +8,14 @@ import (
 )
 
 type AST struct {
-	TypeName      string
+	// upper level type name
+	TypeName string
+	// lower cased type name for filename and method names
 	LowerTypeName string
-	Types         []Types
-	Imports       []string
+	// types that implement the upper level type
+	Types []Types
+	// any imports needed for the generated file
+	Imports []string
 }
 
 type Field struct {

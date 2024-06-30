@@ -6,7 +6,8 @@ import (
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
-// Visitor[interface{}]
+// ExprVisitor[interface{}]
+// StmtVisitor
 type TreeWalkInterpreter struct {
 }
 
