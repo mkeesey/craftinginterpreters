@@ -5,19 +5,19 @@ import (
 	"fmt"
 )
 
-type StmtVisitor[T any] interface {
-	VisitExpression(*Expression) T
-	VisitPrint(*Print) T
+type StmtVisitor interface {
+	VisitExpression(*Expression)
+	VisitPrint(*Print)
 }
 
-func VisitStmt[T any](stmt Stmt, visitor StmtVisitor[T]) T {
+func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 	switch n := stmt.(type) {
 	case *Expression:
-		return visitor.VisitExpression(n)
+		visitor.VisitExpression(n)
 	case *Print:
-		return visitor.VisitPrint(n)
+		visitor.VisitPrint(n)
 	default:
-		panic(fmt.Sprintf("Unknown expression type %T", stmt))
+		panic(fmt.Sprintf("Unknown Stmt type %T", stmt))
 	}
 }
 

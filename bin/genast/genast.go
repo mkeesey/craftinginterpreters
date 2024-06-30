@@ -16,6 +16,8 @@ type AST struct {
 	Types []Types
 	// any imports needed for the generated file
 	Imports []string
+	// visitor returns a type, or just has side effects
+	VisitorHasType bool
 }
 
 type Field struct {
@@ -65,10 +67,11 @@ func main() {
 	}
 
 	exprAst := AST{
-		TypeName:      "Expr",
-		LowerTypeName: "expr",
-		Types:         exprTypes,
-		Imports:       []string{"github.com/mkeesey/craftinginterpreters/pkg/token"},
+		TypeName:       "Expr",
+		LowerTypeName:  "expr",
+		Types:          exprTypes,
+		Imports:        []string{"github.com/mkeesey/craftinginterpreters/pkg/token"},
+		VisitorHasType: true,
 	}
 
 	defineAst(os.Args[1], exprAst)
@@ -89,10 +92,11 @@ func main() {
 	}
 
 	stmtAst := AST{
-		TypeName:      "Stmt",
-		LowerTypeName: "stmt",
-		Types:         stmtTypes,
-		Imports:       []string{},
+		TypeName:       "Stmt",
+		LowerTypeName:  "stmt",
+		Types:          stmtTypes,
+		Imports:        []string{},
+		VisitorHasType: false, // only side effects
 	}
 
 	defineAst(os.Args[1], stmtAst)
@@ -128,20 +132,29 @@ import (
 {{- end }}
 )
 
-type {{ .TypeName }}Visitor[T any] interface {
+type {{ .TypeName }}Visitor{{ if .VisitorHasType }}[T any]{{end}} interface {
 {{- range .Types }}
-	Visit{{ .Name }}(*{{ .Name }}) T
+	Visit{{ .Name }}(*{{ .Name }}){{ if $.VisitorHasType }} T{{end}}
 {{- end }}
 }
 
-func Visit{{ .TypeName }}[T any]({{ .LowerTypeName }} {{ .TypeName }}, visitor {{ .TypeName }}Visitor[T]) T {
+func Visit{{ .TypeName }}{{ if .VisitorHasType }}[T any]{{end}}({{ .LowerTypeName }} {{ .TypeName }}, visitor {{ .TypeName }}
+{{- if $.VisitorHasType -}}
+Visitor[T]) T {
+{{- else -}}
+Visitor) {
+{{- end}}
 	switch n := {{ .LowerTypeName }}.(type) {
 {{- range .Types }}
 	case *{{ .Name }}:
+{{- if $.VisitorHasType }}
 		return visitor.Visit{{ .Name }}(n)
+{{- else }}
+		visitor.Visit{{ .Name }}(n)
+{{- end}}
 {{- end }}
 	default:
-		panic(fmt.Sprintf("Unknown expression type %T", {{ .LowerTypeName }}))
+		panic(fmt.Sprintf("Unknown {{ .TypeName }} type %T", {{ .LowerTypeName }}))
 	}
 }
 

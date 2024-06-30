@@ -25,7 +25,7 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 	case *Unary:
 		return visitor.VisitUnary(n)
 	default:
-		panic(fmt.Sprintf("Unknown expression type %T", expr))
+		panic(fmt.Sprintf("Unknown Expr type %T", expr))
 	}
 }
 
