@@ -15,14 +15,16 @@ func NewInterpreter() *TreeWalkInterpreter {
 	return &TreeWalkInterpreter{}
 }
 
-func (p *TreeWalkInterpreter) Interpret(e Expr) (ret interface{}, err error) {
+func (p *TreeWalkInterpreter) Interpret(statements []Stmt) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("Error: %v", r)
 		}
 	}()
-	ret = p.evaluate(e)
-	return ret, nil
+	for _, stmt := range statements {
+		VisitStmt(stmt, p)
+	}
+	return nil
 }
 
 func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
@@ -89,6 +91,15 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 	}
 
 	panic(fmt.Sprintf("unknown operator type %s", e.Operator.Type))
+}
+
+func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {
+	p.evaluate(e.Expression)
+}
+
+func (p *TreeWalkInterpreter) VisitPrint(e *Print) {
+	val := p.evaluate(e.Expression)
+	fmt.Println(val)
 }
 
 func (p *TreeWalkInterpreter) evaluate(e Expr) interface{} {

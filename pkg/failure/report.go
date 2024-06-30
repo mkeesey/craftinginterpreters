@@ -13,7 +13,7 @@ func Error(line int, message string) error {
 
 func TokenError(tok *token.Token, message string) error {
 	if tok.Type == token.EOF {
-		return Report(tok.Line, " at end", message)
+		return Report(tok.Line, "at end", message)
 	} else {
 		return Report(tok.Line, fmt.Sprintf(" at '%s'", tok.Lexeme), message)
 	}

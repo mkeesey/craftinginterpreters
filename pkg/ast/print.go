@@ -31,6 +31,14 @@ func (p *PrintVisitor) VisitUnary(e *Unary) string {
 	return p.parenthesize(e.Operator.Lexeme, e.Right)
 }
 
+func (p *PrintVisitor) VisitExpression(e *Expression) {
+	//TODO
+}
+
+func (p *PrintVisitor) VisitPrint(e *Print) {
+	//TODO
+}
+
 func (p *PrintVisitor) parenthesize(name string, expr ...Expr) string {
 	builder := strings.Builder{}
 

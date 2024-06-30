@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/ast"
 	"github.com/mkeesey/craftinginterpreters/pkg/parser"
 	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 )
@@ -68,18 +69,16 @@ func run(reader io.Reader) error {
 	}
 
 	parser := parser.NewParser(tokens)
-	expr, err := parser.Parse()
+	statements, err := parser.Parse()
 	if err != nil {
 		return err
 	}
 
-	expr = expr //TODO
-	// visitor := ast.NewInterpreter()
-	// ret, err := visitor.Interpret(expr)
-	// if err != nil {
-	// 	// TODO - distinguish runtime from parse errors for exit codes
-	// 	return err
-	// }
-	// fmt.Printf("%v\n", ret)
+	visitor := ast.NewInterpreter()
+	err = visitor.Interpret(statements)
+	if err != nil {
+		// TODO - distinguish runtime from parse errors for exit codes
+		return err
+	}
 	return nil
 }

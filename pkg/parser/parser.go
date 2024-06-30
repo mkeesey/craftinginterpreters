@@ -17,7 +17,11 @@ func NewParser(tokens []*token.Token) *Parser {
 
 func (p *Parser) Parse() ([]ast.Stmt, error) {
 	stmts := []ast.Stmt{}
-	for !p.isAtEnd() {
+	for {
+		// TODO - peek is not in the book, but it's necessary to check for EOF
+		if p.isAtEnd() || p.peek().Type == token.EOF {
+			break
+		}
 		stmt, err := p.statement()
 		if err != nil {
 			return nil, err // TODO, should accumulate probably
