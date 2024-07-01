@@ -31,11 +31,20 @@ func (p *PrintVisitor) VisitUnary(e *Unary) string {
 	return p.parenthesize(e.Operator.Lexeme, e.Right)
 }
 
+func (p *PrintVisitor) VisitExprVar(e *ExprVar) string {
+	//TODO
+	return p.parenthesize(e.Name.Lexeme)
+}
+
 func (p *PrintVisitor) VisitExpression(e *Expression) {
 	//TODO
 }
 
 func (p *PrintVisitor) VisitPrint(e *Print) {
+	//TODO
+}
+
+func (p *PrintVisitor) VisitStmtVar(e *StmtVar) {
 	//TODO
 }
 

@@ -3,11 +3,14 @@ package ast
 
 import (
 	"fmt"
+
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
 type StmtVisitor interface {
 	VisitExpression(*Expression)
 	VisitPrint(*Print)
+	VisitStmtVar(*StmtVar)
 }
 
 func VisitStmt(stmt Stmt, visitor StmtVisitor) {
@@ -16,6 +19,8 @@ func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 		visitor.VisitExpression(n)
 	case *Print:
 		visitor.VisitPrint(n)
+	case *StmtVar:
+		visitor.VisitStmtVar(n)
 	default:
 		panic(fmt.Sprintf("Unknown Stmt type %T", stmt))
 	}
@@ -36,5 +41,12 @@ type Print struct {
 }
 
 func (b *Print) stmt() {}
+
+type StmtVar struct {
+	Name *token.Token
+	Initializer Expr
+}
+
+func (b *StmtVar) stmt() {}
 
 

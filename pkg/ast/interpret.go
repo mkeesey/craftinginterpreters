@@ -9,10 +9,13 @@ import (
 // ExprVisitor[interface{}]
 // StmtVisitor
 type TreeWalkInterpreter struct {
+	env *Environment
 }
 
 func NewInterpreter() *TreeWalkInterpreter {
-	return &TreeWalkInterpreter{}
+	return &TreeWalkInterpreter{
+		env: NewEnvironment(),
+	}
 }
 
 func (p *TreeWalkInterpreter) Interpret(statements []Stmt) (err error) {
@@ -93,6 +96,14 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 	panic(fmt.Sprintf("unknown operator type %s", e.Operator.Type))
 }
 
+func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
+	val, err := p.env.Get(e.Name.Lexeme)
+	if err != nil {
+		panic(err)
+	}
+	return val
+}
+
 func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {
 	p.evaluate(e.Expression)
 }
@@ -100,6 +111,15 @@ func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {
 func (p *TreeWalkInterpreter) VisitPrint(e *Print) {
 	val := p.evaluate(e.Expression)
 	fmt.Println(val)
+}
+
+func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
+	var value interface{}
+	if e.Initializer != nil {
+		value = p.evaluate(e.Initializer)
+	}
+
+	p.env.Define(e.Name.Lexeme, value)
 }
 
 func (p *TreeWalkInterpreter) evaluate(e Expr) interface{} {

@@ -12,6 +12,7 @@ type ExprVisitor[T any] interface {
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
 	VisitUnary(*Unary) T
+	VisitExprVar(*ExprVar) T
 }
 
 func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
@@ -24,6 +25,8 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 		return visitor.VisitLiteral(n)
 	case *Unary:
 		return visitor.VisitUnary(n)
+	case *ExprVar:
+		return visitor.VisitExprVar(n)
 	default:
 		panic(fmt.Sprintf("Unknown Expr type %T", expr))
 	}
@@ -59,5 +62,11 @@ type Unary struct {
 }
 
 func (b *Unary) expr() {}
+
+type ExprVar struct {
+	Name *token.Token
+}
+
+func (b *ExprVar) expr() {}
 
 

@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+
 	"github.com/mkeesey/craftinginterpreters/pkg/ast"
 	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
@@ -17,19 +19,56 @@ func NewParser(tokens []*token.Token) *Parser {
 
 func (p *Parser) Parse() ([]ast.Stmt, error) {
 	stmts := []ast.Stmt{}
+	allErrs := []error{}
 	for {
 		// TODO - peek is not in the book, but it's necessary to check for EOF
 		if p.isAtEnd() || p.peek().Type == token.EOF {
 			break
 		}
-		stmt, err := p.statement()
+		stmt, err := p.declaration()
 		if err != nil {
-			return nil, err // TODO, should accumulate probably
+			allErrs = append(allErrs, err)
 		}
 		stmts = append(stmts, stmt)
 	}
 
-	return stmts, nil
+	return stmts, errors.Join(allErrs...)
+}
+
+func (p *Parser) declaration() (ast.Stmt, error) {
+	var stmt ast.Stmt
+	var err error
+	if p.match(token.VAR) {
+		stmt, err = p.varDeclaration()
+	} else {
+		stmt, err = p.statement()
+	}
+
+	if err != nil {
+		p.synchronize()
+	}
+	return stmt, err
+}
+
+func (p *Parser) varDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer ast.Expr
+	if p.match(token.EQUAL) {
+		initializer, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.StmtVar{Name: name, Initializer: initializer}, nil
 }
 
 func (p *Parser) statement() (ast.Stmt, error) {
@@ -159,6 +198,8 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: nil}, nil
 	} else if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal}, nil
+	} else if p.match(token.IDENTIFIER) {
+		return &ast.ExprVar{Name: p.previous()}, nil
 	} else if p.match(token.LEFT_PAREN) {
 		expr, err := p.expression()
 		if err != nil {
@@ -229,7 +270,7 @@ func (p *Parser) synchronize() {
 
 		switch p.peek().Type {
 		case token.CLASS, token.FUN, token.VAR, token.FOR, token.IF, token.WHILE, token.PRINT, token.RETURN:
-			break
+			return
 		default:
 			p.advance()
 		}

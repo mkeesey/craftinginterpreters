@@ -64,6 +64,12 @@ func main() {
 				{"Right", "Expr"},
 			},
 		},
+		{
+			"ExprVar",
+			[]Field{
+				{"Name", "*token.Token"},
+			},
+		},
 	}
 
 	exprAst := AST{
@@ -73,7 +79,6 @@ func main() {
 		Imports:        []string{"github.com/mkeesey/craftinginterpreters/pkg/token"},
 		VisitorHasType: true,
 	}
-
 	defineAst(os.Args[1], exprAst)
 
 	stmtTypes := []Types{
@@ -89,16 +94,22 @@ func main() {
 				{"Expression", "Expr"},
 			},
 		},
+		{
+			"StmtVar",
+			[]Field{
+				{"Name", "*token.Token"},
+				{"Initializer", "Expr"},
+			},
+		},
 	}
 
 	stmtAst := AST{
 		TypeName:       "Stmt",
 		LowerTypeName:  "stmt",
 		Types:          stmtTypes,
-		Imports:        []string{},
+		Imports:        []string{"github.com/mkeesey/craftinginterpreters/pkg/token"},
 		VisitorHasType: false, // only side effects
 	}
-
 	defineAst(os.Args[1], stmtAst)
 }
 
