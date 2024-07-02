@@ -30,6 +30,15 @@ func (p *TreeWalkInterpreter) Interpret(statements []Stmt) (err error) {
 	return nil
 }
 
+func (p *TreeWalkInterpreter) VisitAssign(e *Assign) interface{} {
+	value := p.evaluate(e.Value)
+	err := p.env.Assign(e.Name, value)
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
 func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 	left := p.evaluate(e.Left)
 	right := p.evaluate(e.Right)

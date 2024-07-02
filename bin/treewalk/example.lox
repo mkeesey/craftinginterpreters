@@ -2,4 +2,8 @@ print "one";
 print true;
 print 2 + 1;
 var waffle = "taco";
+waffle = "banana";
 print waffle;
+
+var a=1;
+print a = 2;

@@ -8,6 +8,7 @@ import (
 )
 
 type ExprVisitor[T any] interface {
+	VisitAssign(*Assign) T
 	VisitBinary(*Binary) T
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
@@ -17,6 +18,8 @@ type ExprVisitor[T any] interface {
 
 func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 	switch n := expr.(type) {
+	case *Assign:
+		return visitor.VisitAssign(n)
 	case *Binary:
 		return visitor.VisitBinary(n)
 	case *Grouping:
@@ -35,6 +38,13 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 type Expr interface {
 	expr()
 }
+
+type Assign struct {
+	Name *token.Token
+	Value Expr
+}
+
+func (b *Assign) expr() {}
 
 type Binary struct {
 	Left Expr

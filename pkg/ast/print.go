@@ -12,6 +12,10 @@ func (p *PrintVisitor) Print(e Expr) string {
 	return VisitExpr(e, p)
 }
 
+func (p *PrintVisitor) VisitAssign(e *Assign) string {
+	return p.parenthesize(fmt.Sprintf("let %s", e.Name), e.Value)
+}
+
 func (p *PrintVisitor) VisitBinary(e *Binary) string {
 	return p.parenthesize(e.Operator.Lexeme, e.Left, e.Right)
 }

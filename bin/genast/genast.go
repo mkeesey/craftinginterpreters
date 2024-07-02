@@ -38,6 +38,13 @@ func main() {
 
 	exprTypes := []Types{
 		{
+			"Assign",
+			[]Field{
+				{"Name", "*token.Token"},
+				{"Value", "Expr"},
+			},
+		},
+		{
 			"Binary",
 			[]Field{
 				{"Left", "Expr"},
