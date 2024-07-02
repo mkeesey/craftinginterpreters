@@ -102,6 +102,14 @@ func main() {
 			},
 		},
 		{
+			"If",
+			[]Field{
+				{"Condition", "Expr"},
+				{"ThenBranch", "Stmt"},
+				{"ElseBranch", "Stmt"},
+			},
+		},
+		{
 			"Print",
 			[]Field{
 				{"Expression", "Expr"},

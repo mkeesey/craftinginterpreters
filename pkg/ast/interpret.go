@@ -130,6 +130,15 @@ func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {
 	p.evaluate(e.Expression)
 }
 
+func (p *TreeWalkInterpreter) VisitIf(e *If) {
+	condition := p.evaluate(e.Condition)
+	if isTruthy(condition) {
+		VisitStmt(e.ThenBranch, p)
+	} else if e.ElseBranch != nil {
+		VisitStmt(e.ElseBranch, p)
+	}
+}
+
 func (p *TreeWalkInterpreter) VisitPrint(e *Print) {
 	val := p.evaluate(e.Expression)
 	fmt.Println(val)
