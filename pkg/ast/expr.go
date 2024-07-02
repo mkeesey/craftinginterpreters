@@ -12,6 +12,7 @@ type ExprVisitor[T any] interface {
 	VisitBinary(*Binary) T
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
+	VisitLogical(*Logical) T
 	VisitUnary(*Unary) T
 	VisitExprVar(*ExprVar) T
 }
@@ -26,6 +27,8 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 		return visitor.VisitGrouping(n)
 	case *Literal:
 		return visitor.VisitLiteral(n)
+	case *Logical:
+		return visitor.VisitLogical(n)
 	case *Unary:
 		return visitor.VisitUnary(n)
 	case *ExprVar:
@@ -65,6 +68,14 @@ type Literal struct {
 }
 
 func (b *Literal) expr() {}
+
+type Logical struct {
+	Left Expr
+	Operator *token.Token
+	Right Expr
+}
+
+func (b *Logical) expr() {}
 
 type Unary struct {
 	Operator *token.Token

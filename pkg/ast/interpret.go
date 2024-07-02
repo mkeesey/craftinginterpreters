@@ -90,6 +90,22 @@ func (p *TreeWalkInterpreter) VisitLiteral(e *Literal) interface{} {
 	return e.Value
 }
 
+func (p *TreeWalkInterpreter) VisitLogical(e *Logical) interface{} {
+	left := p.evaluate(e.Left)
+
+	if e.Operator.Type == token.OR {
+		if isTruthy(left) {
+			return left
+		}
+	} else {
+		if !isTruthy(left) {
+			return left
+		}
+	}
+
+	return p.evaluate(e.Right)
+}
+
 func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 	right := p.evaluate(e.Right)
 

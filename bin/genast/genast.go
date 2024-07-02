@@ -65,6 +65,14 @@ func main() {
 			},
 		},
 		{
+			"Logical",
+			[]Field{
+				{"Left", "Expr"},
+				{"Operator", "*token.Token"},
+				{"Right", "Expr"},
+			},
+		},
+		{
 			"Unary",
 			[]Field{
 				{"Operator", "*token.Token"},

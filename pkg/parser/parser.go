@@ -171,7 +171,7 @@ func (p *Parser) expression() (ast.Expr, error) {
 }
 
 func (p *Parser) assignment() (ast.Expr, error) {
-	expr, err := p.equality()
+	expr, err := p.or()
 
 	if p.match(token.EQUAL) {
 		equals := p.previous()
@@ -186,6 +186,42 @@ func (p *Parser) assignment() (ast.Expr, error) {
 		}
 
 		return nil, failure.TokenError(equals, "Invalid assignment target.")
+	}
+
+	return expr, err
+}
+
+func (p *Parser) or() (ast.Expr, error) {
+	expr, err := p.and()
+
+	for {
+		if !p.match(token.OR) {
+			break
+		}
+		operator := p.previous()
+		right, err := p.and()
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Logical{Left: expr, Operator: operator, Right: right}, nil
+	}
+
+	return expr, err
+}
+
+func (p *Parser) and() (ast.Expr, error) {
+	expr, err := p.equality()
+
+	for {
+		if !p.match(token.AND) {
+			break
+		}
+		operator := p.previous()
+		right, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Logical{Left: expr, Operator: operator, Right: right}, nil
 	}
 
 	return expr, err
