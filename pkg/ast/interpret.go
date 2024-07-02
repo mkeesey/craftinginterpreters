@@ -113,6 +113,19 @@ func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
 	return val
 }
 
+func (p *TreeWalkInterpreter) VisitBlock(e *Block) {
+	previous := p.env
+	defer func() {
+		p.env = previous
+	}()
+
+	p.env = WithEnvironment(previous)
+
+	for _, stmt := range e.Statements {
+		VisitStmt(stmt, p)
+	}
+}
+
 func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {
 	p.evaluate(e.Expression)
 }

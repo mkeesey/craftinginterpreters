@@ -7,12 +7,21 @@ import (
 )
 
 type Environment struct {
-	values map[string]interface{}
+	enclosing *Environment
+	values    map[string]interface{}
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		values: map[string]interface{}{},
+		enclosing: nil,
+		values:    map[string]interface{}{},
+	}
+}
+
+func WithEnvironment(enclosing *Environment) *Environment {
+	return &Environment{
+		enclosing: enclosing,
+		values:    map[string]interface{}{},
 	}
 }
 
@@ -22,17 +31,27 @@ func (e *Environment) Define(name string, value interface{}) {
 
 func (e *Environment) Assign(tok *token.Token, value interface{}) error {
 	_, ok := e.values[tok.Lexeme]
-	if !ok {
-		return fmt.Errorf("Undefined variable '%s'.", tok.Lexeme)
+	if ok {
+		e.values[tok.Lexeme] = value
+		return nil
 	}
-	e.values[tok.Lexeme] = value
-	return nil
+
+	if e.enclosing != nil {
+		return e.enclosing.Assign(tok, value)
+	}
+
+	return fmt.Errorf("Undefined variable '%s'.", tok.Lexeme)
 }
 
 func (e *Environment) Get(name string) (interface{}, error) {
 	val, ok := e.values[name]
-	if !ok {
-		return nil, fmt.Errorf("Undefined variable '%s'.", name)
+	if ok {
+		return val, nil
 	}
-	return val, nil
+
+	if e.enclosing != nil {
+		return e.enclosing.Get(name)
+	}
+
+	return nil, fmt.Errorf("Undefined variable '%s'.", name)
 }

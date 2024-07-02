@@ -13,6 +13,10 @@ import (
 	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 )
 
+var (
+	visitor = ast.NewInterpreter()
+)
+
 func main() {
 	var err error
 	if len(os.Args) == 2 {
@@ -74,7 +78,6 @@ func run(reader io.Reader) error {
 		return err
 	}
 
-	visitor := ast.NewInterpreter()
 	err = visitor.Interpret(statements)
 	if err != nil {
 		// TODO - distinguish runtime from parse errors for exit codes

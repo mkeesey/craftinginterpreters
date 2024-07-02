@@ -90,6 +90,12 @@ func main() {
 
 	stmtTypes := []Types{
 		{
+			"Block",
+			[]Field{
+				{"Statements", "[]Stmt"},
+			},
+		},
+		{
 			"Expression",
 			[]Field{
 				{"Expression", "Expr"},
