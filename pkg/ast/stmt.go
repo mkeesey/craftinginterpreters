@@ -13,6 +13,7 @@ type StmtVisitor interface {
 	VisitIf(*If)
 	VisitPrint(*Print)
 	VisitStmtVar(*StmtVar)
+	VisitWhile(*While)
 }
 
 func VisitStmt(stmt Stmt, visitor StmtVisitor) {
@@ -27,6 +28,8 @@ func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 		visitor.VisitPrint(n)
 	case *StmtVar:
 		visitor.VisitStmtVar(n)
+	case *While:
+		visitor.VisitWhile(n)
 	default:
 		panic(fmt.Sprintf("Unknown Stmt type %T", stmt))
 	}
@@ -68,5 +71,12 @@ type StmtVar struct {
 }
 
 func (b *StmtVar) stmt() {}
+
+type While struct {
+	Condition Expr
+	Body Stmt
+}
+
+func (b *While) stmt() {}
 
 

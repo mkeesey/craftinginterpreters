@@ -71,11 +71,36 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 	return &ast.StmtVar{Name: name, Initializer: initializer}, nil
 }
 
+func (p *Parser) whileStatement() (ast.Stmt, error) {
+	_, err := p.consume(token.LEFT_PAREN, "Expect '(' after 'while'.")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after while condition.")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.While{Condition: condition, Body: body}, nil
+}
+
 func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.IF) {
 		return p.ifStatement()
 	} else if p.match(token.PRINT) {
 		return p.printStatement()
+	} else if p.match(token.WHILE) {
+		return p.whileStatement()
 	} else if p.match(token.LEFT_BRACE) {
 		stmts, err := p.block()
 		if err != nil {

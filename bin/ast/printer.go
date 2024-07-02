@@ -19,6 +19,7 @@ func main() {
 		},
 	}
 
-	printer := ast.PrintVisitor{}
-	fmt.Println(printer.Print(expr))
+	// printer := ast.PrintVisitor{}
+	// fmt.Println(printer.Print(expr))
+	fmt.Println(expr)
 }

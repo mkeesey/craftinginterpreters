@@ -169,6 +169,12 @@ func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
 	p.env.Define(e.Name.Lexeme, value)
 }
 
+func (p *TreeWalkInterpreter) VisitWhile(e *While) {
+	for isTruthy(p.evaluate(e.Condition)) {
+		VisitStmt(e.Body, p)
+	}
+}
+
 func (p *TreeWalkInterpreter) evaluate(e Expr) interface{} {
 	return VisitExpr(e, p)
 }

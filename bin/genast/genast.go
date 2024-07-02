@@ -130,6 +130,13 @@ func main() {
 				{"Initializer", "Expr"},
 			},
 		},
+		{
+			"While",
+			[]Field{
+				{"Condition", "Expr"},
+				{"Body", "Stmt"},
+			},
+		},
 	}
 
 	stmtAst := AST{
