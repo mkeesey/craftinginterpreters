@@ -9,12 +9,18 @@ import (
 // ExprVisitor[interface{}]
 // StmtVisitor
 type TreeWalkInterpreter struct {
-	env *Environment
+	env       *Environment
+	globalEnv *Environment
 }
 
 func NewInterpreter() *TreeWalkInterpreter {
+	globalEnv := NewEnvironment()
+
+	globalEnv.Define("clock", &TimeCallable{})
+
 	return &TreeWalkInterpreter{
-		env: NewEnvironment(),
+		globalEnv: globalEnv,
+		env:       globalEnv,
 	}
 }
 
@@ -80,6 +86,27 @@ func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 	}
 
 	panic(fmt.Sprintf("unknown operator type %s", e.Operator.Type))
+}
+
+func (p *TreeWalkInterpreter) VisitCall(e *Call) interface{} {
+	callee := p.evaluate(e.Callee)
+
+	args := make([]interface{}, 0)
+	for _, arg := range e.Arguments {
+		args = append(args, p.evaluate(arg))
+	}
+
+	function, ok := callee.(Callable)
+	if !ok {
+		panic("Can only call functions and classes")
+	}
+	if len(args) != function.Arity() {
+		panic(fmt.Sprintf("Expected %d arguments but got %d", function.Arity(), len(args)))
+	}
+
+	ret := function.Call(p, args)
+
+	return ret
 }
 
 func (p *TreeWalkInterpreter) VisitGrouping(e *Grouping) interface{} {

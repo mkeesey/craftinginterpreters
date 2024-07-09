@@ -53,6 +53,14 @@ func main() {
 			},
 		},
 		{
+			"Call",
+			[]Field{
+				{"Callee", "Expr"},
+				{"Paren", "*token.Token"},
+				{"Arguments", "[]Expr"},
+			},
+		},
+		{
 			"Grouping",
 			[]Field{
 				{"Expression", "Expr"},

@@ -10,6 +10,7 @@ import (
 type ExprVisitor[T any] interface {
 	VisitAssign(*Assign) T
 	VisitBinary(*Binary) T
+	VisitCall(*Call) T
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
 	VisitLogical(*Logical) T
@@ -23,6 +24,8 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 		return visitor.VisitAssign(n)
 	case *Binary:
 		return visitor.VisitBinary(n)
+	case *Call:
+		return visitor.VisitCall(n)
 	case *Grouping:
 		return visitor.VisitGrouping(n)
 	case *Literal:
@@ -56,6 +59,14 @@ type Binary struct {
 }
 
 func (b *Binary) expr() {}
+
+type Call struct {
+	Callee Expr
+	Paren *token.Token
+	Arguments []Expr
+}
+
+func (b *Call) expr() {}
 
 type Grouping struct {
 	Expression Expr
