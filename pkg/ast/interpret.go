@@ -157,14 +157,19 @@ func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
 }
 
 func (p *TreeWalkInterpreter) VisitBlock(e *Block) {
+	env := WithEnvironment(p.env)
+	p.executeBlock(e.Statements, env)
+}
+
+func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 	previous := p.env
 	defer func() {
 		p.env = previous
 	}()
 
-	p.env = WithEnvironment(previous)
+	p.env = env
 
-	for _, stmt := range e.Statements {
+	for _, stmt := range stmts {
 		VisitStmt(stmt, p)
 	}
 }
@@ -194,6 +199,11 @@ func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
 	}
 
 	p.env.Define(e.Name.Lexeme, value)
+}
+
+func (p *TreeWalkInterpreter) VisitFunction(e *Function) {
+	function := NewLoxCallable(e)
+	p.env.Define(e.Name.Lexeme, function)
 }
 
 func (p *TreeWalkInterpreter) VisitWhile(e *While) {

@@ -118,6 +118,14 @@ func main() {
 			},
 		},
 		{
+			"Function",
+			[]Field{
+				{"Name", "*token.Token"},
+				{"Params", "[]*token.Token"},
+				{"Body", "[]Stmt"},
+			},
+		},
+		{
 			"If",
 			[]Field{
 				{"Condition", "Expr"},

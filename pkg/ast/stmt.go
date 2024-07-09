@@ -10,6 +10,7 @@ import (
 type StmtVisitor interface {
 	VisitBlock(*Block)
 	VisitExpression(*Expression)
+	VisitFunction(*Function)
 	VisitIf(*If)
 	VisitPrint(*Print)
 	VisitStmtVar(*StmtVar)
@@ -22,6 +23,8 @@ func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 		visitor.VisitBlock(n)
 	case *Expression:
 		visitor.VisitExpression(n)
+	case *Function:
+		visitor.VisitFunction(n)
 	case *If:
 		visitor.VisitIf(n)
 	case *Print:
@@ -50,6 +53,14 @@ type Expression struct {
 }
 
 func (b *Expression) stmt() {}
+
+type Function struct {
+	Name *token.Token
+	Params []*token.Token
+	Body []Stmt
+}
+
+func (b *Function) stmt() {}
 
 type If struct {
 	Condition Expr

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/mkeesey/craftinginterpreters/pkg/ast"
 	"github.com/mkeesey/craftinginterpreters/pkg/failure"
@@ -40,6 +41,8 @@ func (p *Parser) declaration() (ast.Stmt, error) {
 	var err error
 	if p.match(token.VAR) {
 		stmt, err = p.varDeclaration()
+	} else if p.match(token.FUN) {
+		stmt, err = p.function("function")
 	} else {
 		stmt, err = p.statement()
 	}
@@ -69,6 +72,53 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 	return &ast.StmtVar{Name: name, Initializer: initializer}, nil
+}
+
+func (p *Parser) function(kind string) (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, fmt.Sprintf("Expect %s name.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFT_PAREN, fmt.Sprintf("Expect '(' after %s name.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	params := []*token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(params) >= 255 {
+				return nil, failure.TokenError(p.peek(), "Cannot have more than 255 parameters.")
+			}
+
+			param, err := p.consume(token.IDENTIFIER, "Expect parameter name.")
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after parameters.")
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(token.LEFT_BRACE, fmt.Sprintf("Expect '{' before %s body.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Function{Name: name, Params: params, Body: body}, nil
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {
