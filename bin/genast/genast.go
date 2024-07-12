@@ -140,6 +140,13 @@ func main() {
 			},
 		},
 		{
+			"Return",
+			[]Field{
+				{"Keyword", "*token.Token"},
+				{"Value", "Expr"},
+			},
+		},
+		{
 			"StmtVar",
 			[]Field{
 				{"Name", "*token.Token"},

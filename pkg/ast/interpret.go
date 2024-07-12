@@ -192,6 +192,14 @@ func (p *TreeWalkInterpreter) VisitPrint(e *Print) {
 	fmt.Println(val)
 }
 
+func (p *TreeWalkInterpreter) VisitReturn(e *Return) {
+	var value interface{}
+	if e.Value != nil {
+		value = p.evaluate(e.Value)
+	}
+	panic(returnval{value})
+}
+
 func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
 	var value interface{}
 	if e.Initializer != nil {

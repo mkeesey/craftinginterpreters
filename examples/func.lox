@@ -1,0 +1,10 @@
+fun addOne(a) {
+    return a + 1;
+}
+
+fun waffle(a) {
+  return addOne(a);
+}
+
+print waffle(10);
+print waffle(20);

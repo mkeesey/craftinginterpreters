@@ -15,13 +15,22 @@ func NewLoxCallable(declaration *Function) *LoxCallable {
 	return &LoxCallable{declaration: declaration}
 }
 
-func (l *LoxCallable) Call(interpreter *TreeWalkInterpreter, arguments []interface{}) interface{} {
+func (l *LoxCallable) Call(interpreter *TreeWalkInterpreter, arguments []interface{}) (ret interface{}) {
 	env := WithEnvironment(interpreter.env)
 
 	for i, param := range l.declaration.Params {
 		env.Define(param.Lexeme, arguments[i])
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			returnval, ok := r.(returnval)
+			if !ok {
+				panic(r)
+			}
+			ret = returnval.Value
+		}
+	}()
 	interpreter.executeBlock(l.declaration.Body, env)
 	return nil
 }
@@ -32,4 +41,8 @@ func (l *LoxCallable) Arity() int {
 
 func (l *LoxCallable) String() string {
 	return "<fn " + l.declaration.Name.Lexeme + ">"
+}
+
+type returnval struct {
+	Value interface{}
 }

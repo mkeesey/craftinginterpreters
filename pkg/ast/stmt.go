@@ -13,6 +13,7 @@ type StmtVisitor interface {
 	VisitFunction(*Function)
 	VisitIf(*If)
 	VisitPrint(*Print)
+	VisitReturn(*Return)
 	VisitStmtVar(*StmtVar)
 	VisitWhile(*While)
 }
@@ -29,6 +30,8 @@ func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 		visitor.VisitIf(n)
 	case *Print:
 		visitor.VisitPrint(n)
+	case *Return:
+		visitor.VisitReturn(n)
 	case *StmtVar:
 		visitor.VisitStmtVar(n)
 	case *While:
@@ -75,6 +78,13 @@ type Print struct {
 }
 
 func (b *Print) stmt() {}
+
+type Return struct {
+	Keyword *token.Token
+	Value Expr
+}
+
+func (b *Return) stmt() {}
 
 type StmtVar struct {
 	Name *token.Token
