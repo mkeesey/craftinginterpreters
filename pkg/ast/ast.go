@@ -9,14 +9,15 @@ type Callable interface {
 
 type LoxCallable struct {
 	declaration *Function
+	closure     *Environment
 }
 
-func NewLoxCallable(declaration *Function) *LoxCallable {
-	return &LoxCallable{declaration: declaration}
+func NewLoxCallable(declaration *Function, closure *Environment) *LoxCallable {
+	return &LoxCallable{declaration: declaration, closure: closure}
 }
 
 func (l *LoxCallable) Call(interpreter *TreeWalkInterpreter, arguments []interface{}) (ret interface{}) {
-	env := WithEnvironment(interpreter.env)
+	env := WithEnvironment(l.closure)
 
 	for i, param := range l.declaration.Params {
 		env.Define(param.Lexeme, arguments[i])

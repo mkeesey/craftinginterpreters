@@ -210,7 +210,7 @@ func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
 }
 
 func (p *TreeWalkInterpreter) VisitFunction(e *Function) {
-	function := NewLoxCallable(e)
+	function := NewLoxCallable(e, p.env)
 	p.env.Define(e.Name.Lexeme, function)
 }
 
