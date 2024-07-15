@@ -11,6 +11,7 @@ import (
 type TreeWalkInterpreter struct {
 	env       *Environment
 	globalEnv *Environment
+	locals    map[Expr]int
 }
 
 func NewInterpreter() *TreeWalkInterpreter {
@@ -21,6 +22,7 @@ func NewInterpreter() *TreeWalkInterpreter {
 	return &TreeWalkInterpreter{
 		globalEnv: globalEnv,
 		env:       globalEnv,
+		locals:    make(map[Expr]int),
 	}
 }
 
@@ -38,10 +40,19 @@ func (p *TreeWalkInterpreter) Interpret(statements []Stmt) (err error) {
 
 func (p *TreeWalkInterpreter) VisitAssign(e *Assign) interface{} {
 	value := p.evaluate(e.Value)
-	err := p.env.Assign(e.Name, value)
-	if err != nil {
-		panic(err)
+
+	if distance, ok := p.locals[e]; ok {
+		err := p.env.AssignAt(distance, e.Name, value)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		err := p.globalEnv.Assign(e.Name, value)
+		if err != nil {
+			panic(err)
+		}
 	}
+
 	return value
 }
 
@@ -149,11 +160,19 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 }
 
 func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
-	val, err := p.env.Get(e.Name.Lexeme)
+	val, err := p.lookupVariable(e.Name, e)
 	if err != nil {
 		panic(err)
 	}
 	return val
+}
+
+func (p *TreeWalkInterpreter) lookupVariable(name *token.Token, expr Expr) (interface{}, error) {
+	distance, ok := p.locals[expr]
+	if ok {
+		return p.env.GetAt(distance, name.Lexeme)
+	}
+	return p.globalEnv.Get(name.Lexeme)
 }
 
 func (p *TreeWalkInterpreter) VisitBlock(e *Block) {
@@ -172,6 +191,10 @@ func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 	for _, stmt := range stmts {
 		VisitStmt(stmt, p)
 	}
+}
+
+func (p *TreeWalkInterpreter) resolve(expr Expr, depth int) {
+	p.locals[expr] = depth
 }
 
 func (p *TreeWalkInterpreter) VisitExpression(e *Expression) {

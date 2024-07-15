@@ -43,6 +43,12 @@ func (e *Environment) Assign(tok *token.Token, value interface{}) error {
 	return fmt.Errorf("Undefined variable '%s'.", tok.Lexeme)
 }
 
+func (e *Environment) AssignAt(distance int, tok *token.Token, value interface{}) error {
+	env := e.ancestor(distance)
+	env.values[tok.Lexeme] = value
+	return nil
+}
+
 func (e *Environment) Get(name string) (interface{}, error) {
 	val, ok := e.values[name]
 	if ok {
@@ -54,4 +60,22 @@ func (e *Environment) Get(name string) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("Undefined variable '%s'.", name)
+}
+
+func (e *Environment) GetAt(distance int, name string) (interface{}, error) {
+	env := e.ancestor(distance)
+	val, ok := env.values[name]
+	if ok {
+		return val, nil
+	}
+
+	panic(fmt.Sprintf("Undefined variable '%s' which was supposed to be a defined local.", name))
+}
+
+func (e *Environment) ancestor(distance int) *Environment {
+	env := e
+	for i := 0; i < distance; i++ {
+		env = env.enclosing
+	}
+	return env
 }

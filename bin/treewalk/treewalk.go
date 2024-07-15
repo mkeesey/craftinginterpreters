@@ -78,6 +78,9 @@ func run(reader io.Reader) error {
 		return err
 	}
 
+	resolver := ast.NewResolver(visitor)
+	resolver.Resolve(statements)
+
 	err = visitor.Interpret(statements)
 	if err != nil {
 		// TODO - distinguish runtime from parse errors for exit codes
