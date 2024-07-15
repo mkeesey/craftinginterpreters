@@ -6,12 +6,13 @@ import (
 )
 
 type Resolver struct {
+	reporter    *failure.Reporter
 	interpreter *TreeWalkInterpreter
 	scopes      []map[string]bool
 }
 
-func NewResolver(interpreter *TreeWalkInterpreter) *Resolver {
-	return &Resolver{interpreter: interpreter}
+func NewResolver(interpreter *TreeWalkInterpreter, reporter *failure.Reporter) *Resolver {
+	return &Resolver{interpreter: interpreter, reporter: reporter}
 }
 
 func (r *Resolver) VisitAssign(a *Assign) interface{} {
@@ -57,7 +58,7 @@ func (r *Resolver) VisitUnary(unary *Unary) interface{} {
 func (r *Resolver) VisitExprVar(expr *ExprVar) interface{} {
 	scope, ok := r.peekScope()
 	if ok && scope[expr.Name.Lexeme] == false {
-		failure.Error(expr.Name.Line, "Cannot read local variable in its own initializer")
+		r.reporter.Error(expr.Name.Line, "Cannot read local variable in its own initializer")
 	}
 
 	r.resolveLocal(expr, expr.Name)

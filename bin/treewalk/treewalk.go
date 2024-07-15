@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mkeesey/craftinginterpreters/pkg/ast"
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/parser"
 	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 )
@@ -66,6 +67,8 @@ func runPrompt() error {
 }
 
 func run(reader io.Reader) error {
+	reporter := &failure.Reporter{}
+
 	scan := scanner.NewScanner(reader)
 	tokens, err := scan.ScanTokens()
 	if err != nil {
@@ -78,8 +81,12 @@ func run(reader io.Reader) error {
 		return err
 	}
 
-	resolver := ast.NewResolver(visitor)
+	resolver := ast.NewResolver(visitor, reporter)
 	resolver.Resolve(statements)
+
+	if reporter.HasFailed() {
+		return errors.New("Resolver failed")
+	}
 
 	err = visitor.Interpret(statements)
 	if err != nil {
