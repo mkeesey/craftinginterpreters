@@ -26,7 +26,7 @@ type Scanner struct {
 func NewScanner(reader io.Reader, reporter *failure.Reporter) *Scanner {
 	read := bufio.NewReader(reader)
 	buf := strings.Builder{}
-	return &Scanner{reader: read, currLexeme: buf, reporter: reporter}
+	return &Scanner{reader: read, currLexeme: buf, reporter: reporter, line: 1}
 }
 
 func (s *Scanner) ScanTokens() []*token.Token {

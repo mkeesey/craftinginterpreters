@@ -15,10 +15,10 @@ func TestScanner(t *testing.T) {
 		scanner := NewScanner(strings.NewReader("*+("), reporter)
 		tokens := scanner.ScanTokens()
 		require.Len(t, tokens, 4)
-		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
-		require.Equal(t, token.NewToken(token.PLUS, "+", nil, 0), tokens[1])
-		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 0), tokens[2])
-		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[3])
+		require.Equal(t, token.NewToken(token.STAR, "*", nil, 1), tokens[0])
+		require.Equal(t, token.NewToken(token.PLUS, "+", nil, 1), tokens[1])
+		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 1), tokens[2])
+		require.Equal(t, token.NewToken(token.EOF, "", nil, 1), tokens[3])
 	})
 	t.Run("unknown char", func(t *testing.T) {
 		reporter := &failure.Reporter{}
@@ -26,9 +26,9 @@ func TestScanner(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		require.True(t, reporter.HasFailed())
 		require.Len(t, tokens, 3)
-		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
-		require.Equal(t, token.NewToken(token.MINUS, "-", nil, 0), tokens[1])
-		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[2])
+		require.Equal(t, token.NewToken(token.STAR, "*", nil, 1), tokens[0])
+		require.Equal(t, token.NewToken(token.MINUS, "-", nil, 1), tokens[1])
+		require.Equal(t, token.NewToken(token.EOF, "", nil, 1), tokens[2])
 	})
 
 	t.Run("bang noequal", func(t *testing.T) {
@@ -37,10 +37,10 @@ func TestScanner(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		require.False(t, reporter.HasFailed())
 		require.Len(t, tokens, 4)
-		require.Equal(t, token.NewToken(token.BANG, "!", nil, 0), tokens[0])
-		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[1])
-		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 0), tokens[2])
-		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[3])
+		require.Equal(t, token.NewToken(token.BANG, "!", nil, 1), tokens[0])
+		require.Equal(t, token.NewToken(token.STAR, "*", nil, 1), tokens[1])
+		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 1), tokens[2])
+		require.Equal(t, token.NewToken(token.EOF, "", nil, 1), tokens[3])
 	})
 	t.Run("bang equal", func(t *testing.T) {
 		reporter := &failure.Reporter{}
@@ -48,9 +48,9 @@ func TestScanner(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		require.False(t, reporter.HasFailed())
 		require.Len(t, tokens, 3)
-		require.Equal(t, token.NewToken(token.BANG_EQUAL, "!=", nil, 0), tokens[0])
-		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 0), tokens[1])
-		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[2])
+		require.Equal(t, token.NewToken(token.BANG_EQUAL, "!=", nil, 1), tokens[0])
+		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 1), tokens[1])
+		require.Equal(t, token.NewToken(token.EOF, "", nil, 1), tokens[2])
 	})
 
 	t.Run("slash", func(t *testing.T) {
@@ -65,34 +65,34 @@ func TestScanner(t *testing.T) {
 				title: "single slash",
 				input: "/*",
 				output: []*token.Token{
-					token.NewToken(token.SLASH, "/", nil, 0),
-					token.NewToken(token.STAR, "*", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.SLASH, "/", nil, 1),
+					token.NewToken(token.STAR, "*", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
 				title: "single line comment",
 				input: " * //this is a comment",
 				output: []*token.Token{
-					token.NewToken(token.STAR, "*", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.STAR, "*", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
 				title: "single line comment without text",
 				input: " * //",
 				output: []*token.Token{
-					token.NewToken(token.STAR, "*", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.STAR, "*", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
 				title: "multi line comment",
 				input: "* //this is a comment\n (",
 				output: []*token.Token{
-					token.NewToken(token.STAR, "*", nil, 0),
-					token.NewToken(token.LEFT_PAREN, "(", nil, 1),
-					token.NewToken(token.EOF, "", nil, 1),
+					token.NewToken(token.STAR, "*", nil, 1),
+					token.NewToken(token.LEFT_PAREN, "(", nil, 2),
+					token.NewToken(token.EOF, "", nil, 2),
 				},
 			},
 		}
@@ -122,8 +122,8 @@ func TestScanner(t *testing.T) {
 				input:       `"hello"`,
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.STRING, "hello", "hello", 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.STRING, "hello", "hello", 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -132,8 +132,8 @@ func TestScanner(t *testing.T) {
 world"`,
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.STRING, "hello\nworld", "hello\nworld", 1),
-					token.NewToken(token.EOF, "", nil, 1),
+					token.NewToken(token.STRING, "hello\nworld", "hello\nworld", 2),
+					token.NewToken(token.EOF, "", nil, 2),
 				},
 			},
 			{
@@ -167,8 +167,8 @@ world"`,
 				input:       "1",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.NUMBER, "1", 1.0, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.NUMBER, "1", 1.0, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -176,8 +176,8 @@ world"`,
 				input:       "123",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.NUMBER, "123", 123.0, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.NUMBER, "123", 123.0, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -185,8 +185,8 @@ world"`,
 				input:       "123.456",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.NUMBER, "123.456", 123.456, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.NUMBER, "123.456", 123.456, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -194,9 +194,9 @@ world"`,
 				input:       "123.",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.NUMBER, "123", 123.0, 0),
-					token.NewToken(token.DOT, ".", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.NUMBER, "123", 123.0, 1),
+					token.NewToken(token.DOT, ".", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -204,10 +204,10 @@ world"`,
 				input:       `123."hello"`,
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.NUMBER, "123", 123.0, 0),
-					token.NewToken(token.DOT, ".", nil, 0),
-					token.NewToken(token.STRING, "hello", "hello", 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.NUMBER, "123", 123.0, 1),
+					token.NewToken(token.DOT, ".", nil, 1),
+					token.NewToken(token.STRING, "hello", "hello", 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 		}
@@ -237,8 +237,8 @@ world"`,
 				input:       "hello",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "hello", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -246,9 +246,9 @@ world"`,
 				input:       "hello world",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
-					token.NewToken(token.IDENTIFIER, "world", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "hello", nil, 1),
+					token.NewToken(token.IDENTIFIER, "world", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -256,10 +256,10 @@ world"`,
 				input:       "hello.world",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "hello", nil, 0),
-					token.NewToken(token.DOT, ".", nil, 0),
-					token.NewToken(token.IDENTIFIER, "world", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "hello", nil, 1),
+					token.NewToken(token.DOT, ".", nil, 1),
+					token.NewToken(token.IDENTIFIER, "world", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -267,8 +267,8 @@ world"`,
 				input:       "hello_world",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "hello_world", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "hello_world", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -276,8 +276,8 @@ world"`,
 				input:       "_he9llo_world",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 			{
@@ -285,10 +285,10 @@ world"`,
 				input:       "_he9llo_world or waffles",
 				expectError: false,
 				output: []*token.Token{
-					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 0),
-					token.NewToken(token.OR, "or", nil, 0),
-					token.NewToken(token.IDENTIFIER, "waffles", nil, 0),
-					token.NewToken(token.EOF, "", nil, 0),
+					token.NewToken(token.IDENTIFIER, "_he9llo_world", nil, 1),
+					token.NewToken(token.OR, "or", nil, 1),
+					token.NewToken(token.IDENTIFIER, "waffles", nil, 1),
+					token.NewToken(token.EOF, "", nil, 1),
 				},
 			},
 		}
