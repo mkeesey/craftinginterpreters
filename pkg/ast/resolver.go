@@ -5,14 +5,24 @@ import (
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
+type functionType int
+
+const (
+	funcTypeNone functionType = iota
+	funcTypeFunction
+)
+
 type Resolver struct {
-	reporter    *failure.Reporter
-	interpreter *TreeWalkInterpreter
-	scopes      []map[string]bool
+	reporter     *failure.Reporter
+	interpreter  *TreeWalkInterpreter
+	scopes       []map[string]bool
+	currFuncType functionType
 }
 
 func NewResolver(interpreter *TreeWalkInterpreter, reporter *failure.Reporter) *Resolver {
-	return &Resolver{interpreter: interpreter, reporter: reporter}
+	return &Resolver{interpreter: interpreter,
+		reporter:     reporter,
+		currFuncType: funcTypeNone}
 }
 
 func (r *Resolver) VisitAssign(a *Assign) interface{} {
@@ -57,8 +67,11 @@ func (r *Resolver) VisitUnary(unary *Unary) interface{} {
 
 func (r *Resolver) VisitExprVar(expr *ExprVar) interface{} {
 	scope, ok := r.peekScope()
-	if ok && scope[expr.Name.Lexeme] == false {
-		r.reporter.Error(expr.Name.Line, "Cannot read local variable in its own initializer")
+	if ok {
+		defined, declared := scope[expr.Name.Lexeme]
+		if declared && !defined {
+			r.reporter.Report(expr.Name.Line, expr.Name.Lexeme, "Cannot read local variable in its own initializer")
+		}
 	}
 
 	r.resolveLocal(expr, expr.Name)
@@ -78,7 +91,7 @@ func (r *Resolver) VisitExpression(exp *Expression) {
 func (r *Resolver) VisitFunction(fun *Function) {
 	r.declare(fun.Name)
 	r.define(fun.Name)
-	r.resolveFunction(fun)
+	r.resolveFunction(fun, funcTypeFunction)
 }
 
 func (r *Resolver) VisitIf(i *If) {
@@ -94,6 +107,9 @@ func (r *Resolver) VisitPrint(p *Print) {
 }
 
 func (r *Resolver) VisitReturn(ret *Return) {
+	if r.currFuncType == funcTypeNone {
+		r.reporter.TokenError(ret.Keyword, "Can't return from top-level code.")
+	}
 	if ret.Value != nil {
 		r.resolveExpr(ret.Value)
 	}
@@ -126,7 +142,9 @@ func (r *Resolver) resolveExpr(expr Expr) {
 	VisitExpr(expr, r)
 }
 
-func (r *Resolver) resolveFunction(fun *Function) {
+func (r *Resolver) resolveFunction(fun *Function, funcType functionType) {
+	enclosingType := r.currFuncType
+	r.currFuncType = funcType
 	r.beginScope()
 	for _, param := range fun.Params {
 		r.declare(param)
@@ -135,6 +153,7 @@ func (r *Resolver) resolveFunction(fun *Function) {
 
 	r.Resolve(fun.Body)
 	r.endScope()
+	r.currFuncType = enclosingType
 }
 
 func (r *Resolver) resolveLocal(expr Expr, name *token.Token) {
@@ -161,6 +180,9 @@ func (r *Resolver) declare(name *token.Token) {
 	scope, ok := r.peekScope()
 	if !ok {
 		return
+	}
+	if _, alreadyDeclared := scope[name.Lexeme]; alreadyDeclared {
+		r.reporter.Report(name.Line, name.Lexeme, "Variable with this name already declared in this scope")
 	}
 	scope[name.Lexeme] = false
 }
