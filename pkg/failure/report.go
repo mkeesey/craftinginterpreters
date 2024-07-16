@@ -56,6 +56,11 @@ func (r *Reporter) ReportErr(line int, message string, err error) {
 	r.hasFailed = true
 }
 
+func (r *Reporter) Panic(line int, err error) {
+	r.hasFailed = true
+	panic(fmt.Sprintf("line %d: %s", line, err))
+}
+
 func (r *Reporter) HasFailed() bool {
 	return r.hasFailed
 }

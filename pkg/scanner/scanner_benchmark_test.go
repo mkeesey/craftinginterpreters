@@ -3,15 +3,18 @@ package scanner
 import (
 	"strings"
 	"testing"
+
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 )
 
 func BenchmarkScanner(b *testing.B) {
+	reporter := &failure.Reporter{}
 	reader := strings.NewReader(program)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		reader.Seek(0, 0)
-		scan := NewScanner(reader)
+		scan := NewScanner(reader, reporter)
 		scan.ScanTokens()
 	}
 }

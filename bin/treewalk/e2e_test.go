@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/parser"
 	"github.com/mkeesey/craftinginterpreters/pkg/scanner"
 	"github.com/stretchr/testify/require"
@@ -32,9 +33,10 @@ func TestScanParse(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.input, func(t *testing.T) {
-			scan := scanner.NewScanner(strings.NewReader(testcase.input))
-			tokens, err := scan.ScanTokens()
-			require.NoError(t, err)
+			reporter := &failure.Reporter{}
+			scan := scanner.NewScanner(strings.NewReader(testcase.input), reporter)
+			tokens := scan.ScanTokens()
+			require.False(t, reporter.HasFailed())
 
 			parser := parser.NewParser(tokens)
 			expr, err := parser.Parse()

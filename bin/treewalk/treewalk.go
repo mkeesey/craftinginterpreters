@@ -69,21 +69,21 @@ func runPrompt() error {
 func run(reader io.Reader) error {
 	reporter := &failure.Reporter{}
 
-	scan := scanner.NewScanner(reader)
-	tokens, err := scan.ScanTokens()
-	if err != nil {
-		return fmt.Errorf("Error scanning tokens: %w", err)
+	scan := scanner.NewScanner(reader, reporter)
+	tokens := scan.ScanTokens()
+	if reporter.HasFailed() {
+		return errors.New("Scanner failed")
 	}
 
 	parser := parser.NewParser(tokens)
 	statements, err := parser.Parse()
+	// TODO - replace chain of errs with reporter usage
 	if err != nil {
 		return err
 	}
 
 	resolver := ast.NewResolver(visitor, reporter)
 	resolver.Resolve(statements)
-
 	if reporter.HasFailed() {
 		return errors.New("Resolver failed")
 	}

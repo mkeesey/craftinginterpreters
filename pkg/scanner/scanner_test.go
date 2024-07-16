@@ -4,15 +4,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 
 func TestScanner(t *testing.T) {
 	t.Run("single chars only", func(t *testing.T) {
-		scanner := NewScanner(strings.NewReader("*+("))
-		tokens, err := scanner.ScanTokens()
-		require.Nil(t, err)
+		reporter := &failure.Reporter{}
+		scanner := NewScanner(strings.NewReader("*+("), reporter)
+		tokens := scanner.ScanTokens()
 		require.Len(t, tokens, 4)
 		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
 		require.Equal(t, token.NewToken(token.PLUS, "+", nil, 0), tokens[1])
@@ -20,9 +21,10 @@ func TestScanner(t *testing.T) {
 		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[3])
 	})
 	t.Run("unknown char", func(t *testing.T) {
-		scanner := NewScanner(strings.NewReader("*$-"))
-		tokens, err := scanner.ScanTokens()
-		require.NotNil(t, err) // unknown $
+		reporter := &failure.Reporter{}
+		scanner := NewScanner(strings.NewReader("*$-"), reporter)
+		tokens := scanner.ScanTokens()
+		require.True(t, reporter.HasFailed())
 		require.Len(t, tokens, 3)
 		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[0])
 		require.Equal(t, token.NewToken(token.MINUS, "-", nil, 0), tokens[1])
@@ -30,9 +32,10 @@ func TestScanner(t *testing.T) {
 	})
 
 	t.Run("bang noequal", func(t *testing.T) {
-		scanner := NewScanner(strings.NewReader("!*("))
-		tokens, err := scanner.ScanTokens()
-		require.Nil(t, err)
+		reporter := &failure.Reporter{}
+		scanner := NewScanner(strings.NewReader("!*("), reporter)
+		tokens := scanner.ScanTokens()
+		require.False(t, reporter.HasFailed())
 		require.Len(t, tokens, 4)
 		require.Equal(t, token.NewToken(token.BANG, "!", nil, 0), tokens[0])
 		require.Equal(t, token.NewToken(token.STAR, "*", nil, 0), tokens[1])
@@ -40,9 +43,10 @@ func TestScanner(t *testing.T) {
 		require.Equal(t, token.NewToken(token.EOF, "", nil, 0), tokens[3])
 	})
 	t.Run("bang equal", func(t *testing.T) {
-		scanner := NewScanner(strings.NewReader("!=("))
-		tokens, err := scanner.ScanTokens()
-		require.Nil(t, err)
+		reporter := &failure.Reporter{}
+		scanner := NewScanner(strings.NewReader("!=("), reporter)
+		tokens := scanner.ScanTokens()
+		require.False(t, reporter.HasFailed())
 		require.Len(t, tokens, 3)
 		require.Equal(t, token.NewToken(token.BANG_EQUAL, "!=", nil, 0), tokens[0])
 		require.Equal(t, token.NewToken(token.LEFT_PAREN, "(", nil, 0), tokens[1])
@@ -95,9 +99,10 @@ func TestScanner(t *testing.T) {
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
 
-				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.ScanTokens()
-				require.Nil(t, err)
+				reporter := &failure.Reporter{}
+				scanner := NewScanner(strings.NewReader(testcase.input), reporter)
+				tokens := scanner.ScanTokens()
+				require.False(t, reporter.HasFailed())
 				validateTokens(t, tokens, testcase.output)
 			})
 		}
@@ -140,9 +145,10 @@ world"`,
 
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
-				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.ScanTokens()
-				validateResp(t, testcase.expectError, err, tokens, testcase.output)
+				reporter := &failure.Reporter{}
+				scanner := NewScanner(strings.NewReader(testcase.input), reporter)
+				tokens := scanner.ScanTokens()
+				validateResp(t, testcase.expectError, reporter, tokens, testcase.output)
 			})
 		}
 	})
@@ -208,9 +214,10 @@ world"`,
 
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
-				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.ScanTokens()
-				validateResp(t, testcase.expectError, err, tokens, testcase.output)
+				reporter := &failure.Reporter{}
+				scanner := NewScanner(strings.NewReader(testcase.input), reporter)
+				tokens := scanner.ScanTokens()
+				validateResp(t, testcase.expectError, reporter, tokens, testcase.output)
 			})
 		}
 	})
@@ -288,20 +295,21 @@ world"`,
 
 		for _, testcase := range testcases {
 			t.Run(testcase.title, func(t *testing.T) {
-				scanner := NewScanner(strings.NewReader(testcase.input))
-				tokens, err := scanner.ScanTokens()
-				validateResp(t, testcase.expectError, err, tokens, testcase.output)
+				reporter := &failure.Reporter{}
+				scanner := NewScanner(strings.NewReader(testcase.input), reporter)
+				tokens := scanner.ScanTokens()
+				validateResp(t, testcase.expectError, reporter, tokens, testcase.output)
 			})
 		}
 	})
 }
 
-func validateResp(t *testing.T, expectErr bool, err error, tokens []*token.Token, expected []*token.Token) {
+func validateResp(t *testing.T, expectFailedReporter bool, reporter *failure.Reporter, tokens []*token.Token, expected []*token.Token) {
 	t.Helper()
-	if expectErr {
-		require.NotNil(t, err)
+	if expectFailedReporter {
+		require.True(t, reporter.HasFailed())
 	} else {
-		require.Nil(t, err)
+		require.False(t, reporter.HasFailed())
 		validateTokens(t, tokens, expected)
 	}
 }

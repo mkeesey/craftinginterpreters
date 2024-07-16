@@ -19,29 +19,31 @@ type Scanner struct {
 	currLexeme strings.Builder
 
 	line int
+
+	reporter *failure.Reporter
 }
 
-func NewScanner(reader io.Reader) *Scanner {
+func NewScanner(reader io.Reader, reporter *failure.Reporter) *Scanner {
 	read := bufio.NewReader(reader)
 	buf := strings.Builder{}
-	return &Scanner{reader: read, currLexeme: buf}
+	return &Scanner{reader: read, currLexeme: buf, reporter: reporter}
 }
 
-func (s *Scanner) ScanTokens() ([]*token.Token, error) {
-	var allErrs []error
+func (s *Scanner) ScanTokens() []*token.Token {
 	for {
 		s.currLexeme.Reset()
 		err := s.scanToken()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				break
+			} else {
+				s.reporter.Panic(s.line, err)
 			}
-			allErrs = append(allErrs, err)
 		}
 	}
 
 	s.tokens = append(s.tokens, token.NewToken(token.EOF, "", nil, s.line))
-	return s.tokens, errors.Join(allErrs...)
+	return s.tokens
 }
 
 func (s *Scanner) scanToken() error {
@@ -104,7 +106,7 @@ func (s *Scanner) scanToken() error {
 					if errors.Is(err, io.EOF) {
 						break
 					}
-					return failure.Wrap(s.line, "err consuming comment", err)
+					s.reporter.Panic(s.line, err)
 				}
 				if bytes[0] == '\n' {
 					break
@@ -126,7 +128,7 @@ func (s *Scanner) scanToken() error {
 		} else if isAlpha(rune) {
 			err = s.identifierToken()
 		} else {
-			return failure.Error(s.line, "unexpected character")
+			s.reporter.Error(s.line, "unexpected character")
 		}
 	}
 	return err
@@ -161,9 +163,10 @@ func (s *Scanner) stringToken() error {
 		bytes, err := s.reader.Peek(1)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return failure.Report(s.line, s.currLexeme.String(), "unterminated string")
+				s.reporter.Report(s.line, s.currLexeme.String(), "unterminated string")
+				return nil
 			}
-			return failure.Wrap(s.line, "err consuming string", err)
+			s.reporter.Panic(s.line, err)
 		}
 		if bytes[0] == '"' {
 			s.reader.Discard(1) // skip closing quote
@@ -175,7 +178,7 @@ func (s *Scanner) stringToken() error {
 		}
 		rune, _, err := s.reader.ReadRune()
 		if err != nil {
-			return failure.Wrap(s.line, "err consuming string", err)
+			s.reporter.Panic(s.line, err)
 		}
 		s.currLexeme.WriteRune(rune)
 	}
@@ -205,7 +208,7 @@ func (s *Scanner) numberToken() error {
 
 	literal, err := strconv.ParseFloat(s.currLexeme.String(), 64)
 	if err != nil {
-		return failure.Wrap(s.line, "err parsing number", err)
+		s.reporter.Panic(s.line, err)
 	}
 
 	s.addTokenLiteral(token.NUMBER, literal)
@@ -219,14 +222,14 @@ func (s *Scanner) consumeDigits() error {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return failure.Wrap(s.line, "err consuming number", err)
+			s.reporter.Panic(s.line, err)
 		}
 		if !isByteNumber(bytes[0]) {
 			break
 		}
 		rune, _, err := s.reader.ReadRune()
 		if err != nil {
-			return failure.Wrap(s.line, "err consuming number rune", err)
+			s.reporter.Panic(s.line, err)
 		}
 		s.currLexeme.WriteRune(rune)
 	}
