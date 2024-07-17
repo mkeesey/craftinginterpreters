@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
@@ -12,9 +13,10 @@ type TreeWalkInterpreter struct {
 	env       *Environment
 	globalEnv *Environment
 	locals    map[Expr]int
+	reporter  *failure.Reporter
 }
 
-func NewInterpreter() *TreeWalkInterpreter {
+func NewInterpreter(reporter *failure.Reporter) *TreeWalkInterpreter {
 	globalEnv := NewEnvironment()
 
 	globalEnv.Define("clock", &TimeCallable{})
@@ -23,19 +25,19 @@ func NewInterpreter() *TreeWalkInterpreter {
 		globalEnv: globalEnv,
 		env:       globalEnv,
 		locals:    make(map[Expr]int),
+		reporter:  reporter,
 	}
 }
 
-func (p *TreeWalkInterpreter) Interpret(statements []Stmt) (err error) {
+func (p *TreeWalkInterpreter) Interpret(statements []Stmt) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("Error: %v", r)
+			p.reporter.RuntimeError(r)
 		}
 	}()
 	for _, stmt := range statements {
 		VisitStmt(stmt, p)
 	}
-	return nil
 }
 
 func (p *TreeWalkInterpreter) VisitAssign(e *Assign) interface{} {

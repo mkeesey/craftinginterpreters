@@ -22,8 +22,7 @@ func (p *Parser) Parse() ([]ast.Stmt, error) {
 	stmts := []ast.Stmt{}
 	allErrs := []error{}
 	for {
-		// TODO - peek is not in the book, but it's necessary to check for EOF
-		if p.isAtEnd() || p.peek().Type == token.EOF {
+		if p.isAtEnd() {
 			break
 		}
 		stmt, err := p.declaration()
@@ -561,7 +560,7 @@ func (p *Parser) check(t token.TokenType) bool {
 }
 
 func (p *Parser) isAtEnd() bool {
-	return p.current >= len(p.tokens)
+	return p.peek().Type == token.EOF
 }
 
 func (p *Parser) peek() *token.Token {

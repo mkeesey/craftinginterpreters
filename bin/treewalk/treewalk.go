@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	visitor = ast.NewInterpreter()
+	reporter = &failure.Reporter{}
+	visitor  = ast.NewInterpreter(reporter)
 )
 
 func main() {
@@ -30,8 +31,22 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		var outputter ErrorOutputter
+		if errors.As(err, &outputter) {
+			outputter.Output(os.Stderr)
+		} else {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+		}
+
+		var compileError *CompileError
+		var runtimeError *RuntimeError
+		if errors.As(err, &compileError) {
+			os.Exit(65)
+		} else if errors.As(err, &runtimeError) {
+			os.Exit(70)
+		} else {
+			os.Exit(1)
+		}
 	}
 }
 
@@ -61,37 +76,76 @@ func runPrompt() error {
 		reader.Reset(line)
 		err = run(reader)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
+			var outputter ErrorOutputter
+			if errors.As(err, &outputter) {
+				outputter.Output(os.Stderr)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+			}
 		}
 	}
 }
 
 func run(reader io.Reader) error {
-	reporter := &failure.Reporter{}
 
 	scan := scanner.NewScanner(reader, reporter)
 	tokens := scan.ScanTokens()
 	if reporter.HasFailed() {
-		return errors.New("Scanner failed")
+		return NewCompileError("")
 	}
 
 	parser := parser.NewParser(tokens)
 	statements, err := parser.Parse()
 	// TODO - replace chain of errs with reporter usage
 	if err != nil {
-		return err
+		return NewCompileError(err.Error())
 	}
 
 	resolver := ast.NewResolver(visitor, reporter)
 	resolver.Resolve(statements)
 	if reporter.HasFailed() {
-		return errors.New("Resolver failed")
+		return NewCompileError("")
 	}
 
-	err = visitor.Interpret(statements)
-	if err != nil {
-		// TODO - distinguish runtime from parse errors for exit codes
-		return err
+	visitor.Interpret(statements)
+	if reporter.HasFailed() {
+		return NewRuntimeError()
 	}
 	return nil
+}
+
+type ErrorOutputter interface {
+	Output(w io.Writer)
+}
+
+type CompileError struct {
+	Message string
+}
+
+func NewCompileError(message string) error {
+	return &CompileError{Message: message}
+}
+
+func (c *CompileError) Error() string {
+	return fmt.Sprintf("CompileError %s", c.Message)
+}
+
+func (c *CompileError) Output(w io.Writer) {
+	if c.Message != "" {
+		fmt.Fprintf(w, "%s\n", c.Message)
+	}
+}
+
+type RuntimeError struct {
+}
+
+func NewRuntimeError() error {
+	return &RuntimeError{}
+}
+
+func (r *RuntimeError) Error() string {
+	return "RuntimeError"
+}
+
+func (r *RuntimeError) Output(w io.Writer) {
 }

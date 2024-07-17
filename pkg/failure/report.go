@@ -61,6 +61,12 @@ func (r *Reporter) Panic(line int, err error) {
 	panic(fmt.Sprintf("line %d: %s", line, err))
 }
 
+func (r *Reporter) RuntimeError(panicmsg any) {
+	r.hasFailed = true
+	//TODO add lines
+	fmt.Fprintf(os.Stderr, "Error: %s\n", panicmsg)
+}
+
 func (r *Reporter) HasFailed() bool {
 	return r.hasFailed
 }
