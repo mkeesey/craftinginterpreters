@@ -45,6 +45,11 @@ func (r *Resolver) VisitCall(call *Call) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitGet(get *Get) interface{} {
+	r.resolveExpr(get.Object)
+	return nil
+}
+
 func (r *Resolver) VisitGrouping(g *Grouping) interface{} {
 	r.resolveExpr(g.Expression)
 	return nil
@@ -57,6 +62,12 @@ func (r *Resolver) VisitLiteral(lit *Literal) interface{} {
 func (r *Resolver) VisitLogical(logical *Logical) interface{} {
 	r.resolveExpr(logical.Left)
 	r.resolveExpr(logical.Right)
+	return nil
+}
+
+func (r *Resolver) VisitSet(set *Set) interface{} {
+	r.resolveExpr(set.Value)
+	r.resolveExpr(set.Object)
 	return nil
 }
 

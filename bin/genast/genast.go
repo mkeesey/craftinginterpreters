@@ -61,6 +61,21 @@ func main() {
 			},
 		},
 		{
+			"Get",
+			[]Field{
+				{"Object", "Expr"},
+				{"Name", "*token.Token"},
+			},
+		},
+		{
+			"Set",
+			[]Field{
+				{"Object", "Expr"},
+				{"Name", "*token.Token"},
+				{"Value", "Expr"},
+			},
+		},
+		{
 			"Grouping",
 			[]Field{
 				{"Expression", "Expr"},

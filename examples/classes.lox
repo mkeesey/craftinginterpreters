@@ -1,0 +1,6 @@
+class Foo {
+}
+
+var blah = Foo();
+blah.tacos = "waffles";
+print blah.tacos;

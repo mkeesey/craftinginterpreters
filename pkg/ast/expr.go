@@ -11,6 +11,8 @@ type ExprVisitor[T any] interface {
 	VisitAssign(*Assign) T
 	VisitBinary(*Binary) T
 	VisitCall(*Call) T
+	VisitGet(*Get) T
+	VisitSet(*Set) T
 	VisitGrouping(*Grouping) T
 	VisitLiteral(*Literal) T
 	VisitLogical(*Logical) T
@@ -26,6 +28,10 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 		return visitor.VisitBinary(n)
 	case *Call:
 		return visitor.VisitCall(n)
+	case *Get:
+		return visitor.VisitGet(n)
+	case *Set:
+		return visitor.VisitSet(n)
 	case *Grouping:
 		return visitor.VisitGrouping(n)
 	case *Literal:
@@ -67,6 +73,21 @@ type Call struct {
 }
 
 func (b *Call) expr() {}
+
+type Get struct {
+	Object Expr
+	Name *token.Token
+}
+
+func (b *Get) expr() {}
+
+type Set struct {
+	Object Expr
+	Name *token.Token
+	Value Expr
+}
+
+func (b *Set) expr() {}
 
 type Grouping struct {
 	Expression Expr

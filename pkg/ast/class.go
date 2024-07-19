@@ -1,5 +1,7 @@
 package ast
 
+import "github.com/mkeesey/craftinginterpreters/pkg/token"
+
 type LoxClass struct {
 	name string
 }
@@ -22,11 +24,24 @@ func (l *LoxClass) String() string {
 }
 
 type LoxInstance struct {
-	class *LoxClass
+	class  *LoxClass
+	fields map[string]interface{}
 }
 
 func NewLoxInstance(class *LoxClass) *LoxInstance {
-	return &LoxInstance{class: class}
+	return &LoxInstance{class: class, fields: make(map[string]interface{})}
+}
+
+func (l *LoxInstance) Get(name *token.Token) interface{} {
+	if value, ok := l.fields[name.Lexeme]; ok {
+		return value
+	}
+
+	panic("Undefined property '" + name.Lexeme + "'.")
+}
+
+func (l *LoxInstance) Set(name *token.Token, value interface{}) {
+	l.fields[name.Lexeme] = value
 }
 
 func (l *LoxInstance) String() string {

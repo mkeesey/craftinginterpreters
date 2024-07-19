@@ -122,6 +122,14 @@ func (p *TreeWalkInterpreter) VisitCall(e *Call) interface{} {
 	return ret
 }
 
+func (p *TreeWalkInterpreter) VisitGet(e *Get) interface{} {
+	obj := p.evaluate(e.Object)
+	if instance, ok := obj.(*LoxInstance); ok {
+		return instance.Get(e.Name)
+	}
+	panic("Only instances have properties")
+}
+
 func (p *TreeWalkInterpreter) VisitGrouping(e *Grouping) interface{} {
 	return p.evaluate(e.Expression)
 }
@@ -144,6 +152,16 @@ func (p *TreeWalkInterpreter) VisitLogical(e *Logical) interface{} {
 	}
 
 	return p.evaluate(e.Right)
+}
+
+func (p *TreeWalkInterpreter) VisitSet(e *Set) interface{} {
+	obj := p.evaluate(e.Object)
+	if instance, ok := obj.(*LoxInstance); ok {
+		value := p.evaluate(e.Value)
+		instance.Set(e.Name, value)
+		return value
+	}
+	panic("Only instances have fields")
 }
 
 func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {

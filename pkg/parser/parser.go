@@ -374,6 +374,8 @@ func (p *Parser) assignment() (ast.Expr, error) {
 		if exprVar, ok := expr.(*ast.ExprVar); ok {
 			name := exprVar.Name
 			return &ast.Assign{Name: name, Value: value}, nil
+		} else if getExpr, ok := expr.(*ast.Get); ok {
+			return &ast.Set{Object: getExpr.Object, Name: getExpr.Name, Value: value}, nil
 		}
 
 		return nil, failure.TokenError(equals, "Invalid assignment target.")
@@ -507,6 +509,12 @@ func (p *Parser) call() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if p.match(token.DOT) {
+			name, err := p.consume(token.IDENTIFIER, "Expect property name after '.'")
+			if err != nil {
+				return nil, err
+			}
+			expr = &ast.Get{Object: expr, Name: name}
 		} else {
 			break
 		}
