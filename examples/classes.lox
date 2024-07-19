@@ -1,6 +1,11 @@
 class Foo {
+    eat() {
+        print "tacos";
+    }
 }
 
 var blah = Foo();
 blah.tacos = "waffles";
 print blah.tacos;
+
+blah.eat();

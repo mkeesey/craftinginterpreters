@@ -3,11 +3,12 @@ package ast
 import "github.com/mkeesey/craftinginterpreters/pkg/token"
 
 type LoxClass struct {
-	name string
+	name    string
+	methods map[string]*LoxCallable
 }
 
-func NewLoxClass(name string) *LoxClass {
-	return &LoxClass{name: name}
+func NewLoxClass(name string, methods map[string]*LoxCallable) *LoxClass {
+	return &LoxClass{name: name, methods: methods}
 }
 
 func (l *LoxClass) Call(interpreter *TreeWalkInterpreter, arguments []interface{}) interface{} {
@@ -37,6 +38,10 @@ func (l *LoxInstance) Get(name *token.Token) interface{} {
 		return value
 	}
 
+	if method := l.findMethod(name.Lexeme); method != nil {
+		return method
+	}
+
 	panic("Undefined property '" + name.Lexeme + "'.")
 }
 
@@ -46,4 +51,12 @@ func (l *LoxInstance) Set(name *token.Token, value interface{}) {
 
 func (l *LoxInstance) String() string {
 	return "<instance of " + l.class.name + ">"
+}
+
+func (l *LoxInstance) findMethod(name string) *LoxCallable {
+	if method, ok := l.class.methods[name]; ok {
+		return method
+	}
+
+	return nil
 }

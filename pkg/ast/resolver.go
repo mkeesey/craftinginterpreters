@@ -10,6 +10,7 @@ type functionType int
 const (
 	funcTypeNone functionType = iota
 	funcTypeFunction
+	funcTypeMethod
 )
 
 type Resolver struct {
@@ -98,6 +99,11 @@ func (r *Resolver) VisitBlock(b *Block) {
 func (r *Resolver) VisitClass(class *Class) {
 	r.declare(class.Name)
 	r.define(class.Name)
+
+	for _, method := range class.Methods {
+		declaration := funcTypeMethod
+		r.resolveFunction(method, declaration)
+	}
 }
 
 func (r *Resolver) VisitExpression(exp *Expression) {

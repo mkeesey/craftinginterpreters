@@ -215,7 +215,14 @@ func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 
 func (p *TreeWalkInterpreter) VisitClass(class *Class) {
 	p.env.Define(class.Name.Lexeme, nil)
-	loxClass := NewLoxClass(class.Name.Lexeme)
+
+	methods := make(map[string]*LoxCallable)
+	for _, method := range class.Methods {
+		function := NewLoxCallable(method, p.env)
+		methods[method.Name.Lexeme] = function
+	}
+
+	loxClass := NewLoxClass(class.Name.Lexeme, methods)
 	p.env.Assign(class.Name, loxClass)
 }
 
