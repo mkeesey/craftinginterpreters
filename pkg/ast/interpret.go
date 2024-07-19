@@ -195,6 +195,12 @@ func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 	}
 }
 
+func (p *TreeWalkInterpreter) VisitClass(class *Class) {
+	p.env.Define(class.Name.Lexeme, nil)
+	loxClass := NewLoxClass(class.Name.Lexeme)
+	p.env.Assign(class.Name, loxClass)
+}
+
 func (p *TreeWalkInterpreter) resolve(expr Expr, depth int) {
 	p.locals[expr] = depth
 }

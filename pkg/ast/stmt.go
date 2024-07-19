@@ -9,6 +9,7 @@ import (
 
 type StmtVisitor interface {
 	VisitBlock(*Block)
+	VisitClass(*Class)
 	VisitExpression(*Expression)
 	VisitFunction(*Function)
 	VisitIf(*If)
@@ -22,6 +23,8 @@ func VisitStmt(stmt Stmt, visitor StmtVisitor) {
 	switch n := stmt.(type) {
 	case *Block:
 		visitor.VisitBlock(n)
+	case *Class:
+		visitor.VisitClass(n)
 	case *Expression:
 		visitor.VisitExpression(n)
 	case *Function:
@@ -50,6 +53,13 @@ type Block struct {
 }
 
 func (b *Block) stmt() {}
+
+type Class struct {
+	Name *token.Token
+	Methods []*Function
+}
+
+func (b *Class) stmt() {}
 
 type Expression struct {
 	Expression Expr

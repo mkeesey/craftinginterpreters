@@ -42,6 +42,8 @@ func (p *Parser) declaration() (ast.Stmt, error) {
 		stmt, err = p.varDeclaration()
 	} else if p.match(token.FUN) {
 		stmt, err = p.function("function")
+	} else if p.match(token.CLASS) {
+		stmt, err = p.classDeclaration()
 	} else {
 		stmt, err = p.statement()
 	}
@@ -118,6 +120,39 @@ func (p *Parser) function(kind string) (ast.Stmt, error) {
 	}
 
 	return &ast.Function{Name: name, Params: params, Body: body}, nil
+}
+
+func (p *Parser) classDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect class name.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	var methods []*ast.Function
+	for {
+		if p.check(token.RIGHT_BRACE) || p.isAtEnd() {
+			break
+		}
+		method, err := p.function("method")
+		if err != nil {
+			return nil, err
+		}
+		if methodFunc, ok := method.(*ast.Function); ok {
+			methods = append(methods, methodFunc)
+		}
+	}
+
+	_, err = p.consume(token.RIGHT_BRACE, "Expect '}' after class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Class{Name: name, Methods: methods}, nil
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {

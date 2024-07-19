@@ -84,6 +84,11 @@ func (r *Resolver) VisitBlock(b *Block) {
 	r.endScope()
 }
 
+func (r *Resolver) VisitClass(class *Class) {
+	r.declare(class.Name)
+	r.define(class.Name)
+}
+
 func (r *Resolver) VisitExpression(exp *Expression) {
 	r.resolveExpr(exp.Expression)
 }

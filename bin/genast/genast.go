@@ -112,6 +112,13 @@ func main() {
 			},
 		},
 		{
+			"Class",
+			[]Field{
+				{"Name", "*token.Token"},
+				{"Methods", "[]*Function"},
+			},
+		},
+		{
 			"Expression",
 			[]Field{
 				{"Expression", "Expr"},
