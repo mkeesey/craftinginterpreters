@@ -559,6 +559,8 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: nil}, nil
 	} else if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal}, nil
+	} else if p.match(token.THIS) {
+		return &ast.This{Keyword: p.previous()}, nil
 	} else if p.match(token.IDENTIFIER) {
 		return &ast.ExprVar{Name: p.previous()}, nil
 	} else if p.match(token.LEFT_PAREN) {

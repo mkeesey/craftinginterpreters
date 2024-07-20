@@ -68,14 +68,6 @@ func main() {
 			},
 		},
 		{
-			"Set",
-			[]Field{
-				{"Object", "Expr"},
-				{"Name", "*token.Token"},
-				{"Value", "Expr"},
-			},
-		},
-		{
 			"Grouping",
 			[]Field{
 				{"Expression", "Expr"},
@@ -93,6 +85,20 @@ func main() {
 				{"Left", "Expr"},
 				{"Operator", "*token.Token"},
 				{"Right", "Expr"},
+			},
+		},
+		{
+			"Set",
+			[]Field{
+				{"Object", "Expr"},
+				{"Name", "*token.Token"},
+				{"Value", "Expr"},
+			},
+		},
+		{
+			"This",
+			[]Field{
+				{"Keyword", "*token.Token"},
 			},
 		},
 		{

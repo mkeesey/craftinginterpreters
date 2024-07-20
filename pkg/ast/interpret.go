@@ -164,6 +164,14 @@ func (p *TreeWalkInterpreter) VisitSet(e *Set) interface{} {
 	panic("Only instances have fields")
 }
 
+func (p *TreeWalkInterpreter) VisitThis(e *This) interface{} {
+	this, err := p.lookupVariable(e.Keyword, e)
+	if err != nil {
+		panic(err)
+	}
+	return this
+}
+
 func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 	right := p.evaluate(e.Right)
 
@@ -216,9 +224,9 @@ func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 func (p *TreeWalkInterpreter) VisitClass(class *Class) {
 	p.env.Define(class.Name.Lexeme, nil)
 
-	methods := make(map[string]*LoxCallable)
+	methods := make(map[string]*LoxFunction)
 	for _, method := range class.Methods {
-		function := NewLoxCallable(method, p.env)
+		function := NewLoxFunction(method, p.env, method.Name.Lexeme == "init")
 		methods[method.Name.Lexeme] = function
 	}
 
@@ -266,7 +274,7 @@ func (p *TreeWalkInterpreter) VisitStmtVar(e *StmtVar) {
 }
 
 func (p *TreeWalkInterpreter) VisitFunction(e *Function) {
-	function := NewLoxCallable(e, p.env)
+	function := NewLoxFunction(e, p.env, false)
 	p.env.Define(e.Name.Lexeme, function)
 }
 

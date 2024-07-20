@@ -10,20 +10,31 @@ type functionType int
 const (
 	funcTypeNone functionType = iota
 	funcTypeFunction
+	funcTypeInitializer
 	funcTypeMethod
 )
 
+type classType int
+
+const (
+	classTypeNone classType = iota
+	classTypeClass
+)
+
 type Resolver struct {
-	reporter     *failure.Reporter
-	interpreter  *TreeWalkInterpreter
-	scopes       []map[string]bool
-	currFuncType functionType
+	reporter      *failure.Reporter
+	interpreter   *TreeWalkInterpreter
+	scopes        []map[string]bool
+	currFuncType  functionType
+	currClassType classType
 }
 
 func NewResolver(interpreter *TreeWalkInterpreter, reporter *failure.Reporter) *Resolver {
 	return &Resolver{interpreter: interpreter,
-		reporter:     reporter,
-		currFuncType: funcTypeNone}
+		reporter:      reporter,
+		currFuncType:  funcTypeNone,
+		currClassType: classTypeNone,
+	}
 }
 
 func (r *Resolver) VisitAssign(a *Assign) interface{} {
@@ -72,6 +83,15 @@ func (r *Resolver) VisitSet(set *Set) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitThis(this *This) interface{} {
+	if r.currClassType == classTypeNone {
+		r.reporter.TokenError(this.Keyword, "Cannot use 'this' outside of a class.")
+		return nil
+	}
+	r.resolveLocal(this, this.Keyword)
+	return nil
+}
+
 func (r *Resolver) VisitUnary(unary *Unary) interface{} {
 	r.resolveExpr(unary.Right)
 	return nil
@@ -97,13 +117,26 @@ func (r *Resolver) VisitBlock(b *Block) {
 }
 
 func (r *Resolver) VisitClass(class *Class) {
+	priorClassType := r.currClassType
+	r.currClassType = classTypeClass
+
 	r.declare(class.Name)
 	r.define(class.Name)
 
+	r.beginScope()
+	scope, _ := r.peekScope()
+	scope["this"] = true
+
 	for _, method := range class.Methods {
 		declaration := funcTypeMethod
+		if method.Name.Lexeme == "init" {
+			declaration = funcTypeInitializer
+		}
 		r.resolveFunction(method, declaration)
 	}
+
+	r.endScope()
+	r.currClassType = priorClassType
 }
 
 func (r *Resolver) VisitExpression(exp *Expression) {
@@ -133,6 +166,10 @@ func (r *Resolver) VisitReturn(ret *Return) {
 		r.reporter.TokenError(ret.Keyword, "Can't return from top-level code.")
 	}
 	if ret.Value != nil {
+		if r.currFuncType == funcTypeInitializer {
+			r.reporter.TokenError(ret.Keyword, "Can't return a value from an initializer.")
+		}
+
 		r.resolveExpr(ret.Value)
 	}
 }

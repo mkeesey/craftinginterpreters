@@ -1,11 +1,22 @@
 class Foo {
+    init(flavor) {
+        this.flavor = flavor;
+    }
+
     eat() {
         print "tacos";
     }
+
+    taste() {
+        var adjective = "delicious";
+        print "The " + this.flavor + " cake is " + adjective + "!";
+    }
 }
 
-var blah = Foo();
+var blah = Foo("chocolate");
 blah.tacos = "waffles";
 print blah.tacos;
 
 blah.eat();
+
+blah.taste();
