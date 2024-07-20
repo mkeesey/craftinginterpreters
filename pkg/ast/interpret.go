@@ -198,7 +198,7 @@ func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
 func (p *TreeWalkInterpreter) lookupVariable(name *token.Token, expr Expr) (interface{}, error) {
 	distance, ok := p.locals[expr]
 	if ok {
-		return p.env.GetAt(distance, name.Lexeme)
+		return p.env.GetAt(distance, name.Lexeme), nil
 	}
 	return p.globalEnv.Get(name.Lexeme)
 }

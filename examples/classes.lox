@@ -1,6 +1,8 @@
 class Foo {
     init(flavor) {
         this.flavor = flavor;
+
+        return;
     }
 
     eat() {

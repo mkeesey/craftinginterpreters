@@ -32,11 +32,7 @@ func (l *LoxFunction) Call(interpreter *TreeWalkInterpreter, arguments []interfa
 			}
 
 			if l.isIntializer { // initializers always return 'this'
-				var err error
-				ret, err = env.GetAt(0, "this")
-				if err != nil {
-					panic(err)
-				}
+				ret = l.closure.GetAt(0, "this")
 			} else {
 				ret = returnval.Value
 			}
@@ -44,11 +40,7 @@ func (l *LoxFunction) Call(interpreter *TreeWalkInterpreter, arguments []interfa
 	}()
 	interpreter.executeBlock(l.declaration.Body, env)
 	if l.isIntializer {
-		this, err := l.closure.GetAt(0, "this")
-		if err != nil {
-			panic(err)
-		}
-		return this
+		return l.closure.GetAt(0, "this")
 	}
 	return nil
 }

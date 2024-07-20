@@ -62,11 +62,11 @@ func (e *Environment) Get(name string) (interface{}, error) {
 	return nil, fmt.Errorf("Undefined variable '%s'.", name)
 }
 
-func (e *Environment) GetAt(distance int, name string) (interface{}, error) {
+func (e *Environment) GetAt(distance int, name string) interface{} {
 	env := e.ancestor(distance)
 	val, ok := env.values[name]
 	if ok {
-		return val, nil
+		return val
 	}
 
 	panic(fmt.Sprintf("Undefined variable '%s' which was supposed to be a defined local.", name))
