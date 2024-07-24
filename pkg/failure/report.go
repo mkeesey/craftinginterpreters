@@ -22,11 +22,11 @@ func TokenError(tok *token.Token, message string) error {
 
 func Report(line int, where string, message string) error {
 	whereStr := strings.TrimSuffix(where, "\n")
-	return fmt.Errorf("[line: %d] Error %s: %s", line, whereStr, message)
+	return fmt.Errorf("[line %d] Error %s: %s", line, whereStr, message)
 }
 
 func Wrap(line int, message string, err error) error {
-	return fmt.Errorf("[line: %d] Error %s: %w", line, message, err)
+	return fmt.Errorf("[line %d] Error %s: %w", line, message, err)
 }
 
 type Reporter struct {
@@ -47,12 +47,12 @@ func (r *Reporter) TokenError(tok *token.Token, message string) {
 
 func (r *Reporter) Report(line int, where string, message string) {
 	whereStr := strings.TrimSuffix(where, "\n")
-	fmt.Fprintf(os.Stderr, "[line: %d] Error %s: %s\n", line, whereStr, message)
+	fmt.Fprintf(os.Stderr, "[line %d] Error %s: %s\n", line, whereStr, message)
 	r.hasFailed = true
 }
 
 func (r *Reporter) ReportErr(line int, message string, err error) {
-	fmt.Fprintf(os.Stderr, "[line: %d] Error %s: %s\n", line, message, err)
+	fmt.Fprintf(os.Stderr, "[line %d] Error %s: %s\n", line, message, err)
 	r.hasFailed = true
 }
 

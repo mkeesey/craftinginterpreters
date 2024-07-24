@@ -90,7 +90,7 @@ func (p *Parser) function(kind string) (ast.Stmt, error) {
 	if !p.check(token.RIGHT_PAREN) {
 		for {
 			if len(params) >= 255 {
-				return nil, failure.TokenError(p.peek(), "Cannot have more than 255 parameters.")
+				return nil, failure.TokenError(p.peek(), "Can't have more than 255 parameters.")
 			}
 
 			param, err := p.consume(token.IDENTIFIER, "Expect parameter name.")
@@ -528,7 +528,7 @@ func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
 	if !p.check(token.RIGHT_PAREN) {
 		for {
 			if len(args) >= 255 {
-				return nil, failure.TokenError(p.peek(), "Cannot have more than 255 arguments.")
+				return nil, failure.TokenError(p.peek(), "Can't have more than 255 arguments.")
 			}
 
 			arg, err := p.expression()
