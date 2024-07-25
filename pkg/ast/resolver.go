@@ -19,6 +19,7 @@ type classType int
 const (
 	classTypeNone classType = iota
 	classTypeClass
+	classTypeSubclass
 )
 
 type Resolver struct {
@@ -83,6 +84,17 @@ func (r *Resolver) VisitSet(set *Set) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitSuper(super *Super) interface{} {
+	if r.currClassType == classTypeNone {
+		r.reporter.TokenError(super.Keyword, "Cannot use 'super' outside of a class.")
+	} else if r.currClassType != classTypeSubclass {
+		r.reporter.TokenError(super.Keyword, "Cannot use 'super' in a class with no superclass.")
+	}
+
+	r.resolveLocal(super, super.Keyword)
+	return nil
+}
+
 func (r *Resolver) VisitThis(this *This) interface{} {
 	if r.currClassType == classTypeNone {
 		r.reporter.TokenError(this.Keyword, "Cannot use 'this' outside of a class.")
@@ -119,11 +131,27 @@ func (r *Resolver) VisitBlock(b *Block) {
 func (r *Resolver) VisitClass(class *Class) {
 	priorClassType := r.currClassType
 	r.currClassType = classTypeClass
+	defer func() {
+		r.currClassType = priorClassType
+	}()
 
 	r.declare(class.Name)
 	r.define(class.Name)
+	if class.Superclass != nil {
+		r.currClassType = classTypeSubclass
+		if class.Name.Lexeme == class.Superclass.Name.Lexeme {
+			r.reporter.TokenError(class.Name, "A class cannot inherit from itself.")
+		}
+
+		r.resolveExpr(class.Superclass)
+		r.beginScope()
+		defer r.endScope()
+		scope, _ := r.peekScope()
+		scope["super"] = true
+	}
 
 	r.beginScope()
+	defer r.endScope()
 	scope, _ := r.peekScope()
 	scope["this"] = true
 
@@ -134,9 +162,6 @@ func (r *Resolver) VisitClass(class *Class) {
 		}
 		r.resolveFunction(method, declaration)
 	}
-
-	r.endScope()
-	r.currClassType = priorClassType
 }
 
 func (r *Resolver) VisitExpression(exp *Expression) {

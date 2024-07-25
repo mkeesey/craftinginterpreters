@@ -16,6 +16,7 @@ type ExprVisitor[T any] interface {
 	VisitLiteral(*Literal) T
 	VisitLogical(*Logical) T
 	VisitSet(*Set) T
+	VisitSuper(*Super) T
 	VisitThis(*This) T
 	VisitUnary(*Unary) T
 	VisitExprVar(*ExprVar) T
@@ -39,6 +40,8 @@ func VisitExpr[T any](expr Expr, visitor ExprVisitor[T]) T {
 		return visitor.VisitLogical(n)
 	case *Set:
 		return visitor.VisitSet(n)
+	case *Super:
+		return visitor.VisitSuper(n)
 	case *This:
 		return visitor.VisitThis(n)
 	case *Unary:
@@ -111,6 +114,13 @@ type Set struct {
 }
 
 func (b *Set) expr() {}
+
+type Super struct {
+	Keyword *token.Token
+	Method *token.Token
+}
+
+func (b *Super) expr() {}
 
 type This struct {
 	Keyword *token.Token

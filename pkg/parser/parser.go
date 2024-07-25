@@ -128,6 +128,14 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
+	var superclass *ast.ExprVar = nil
+	if p.match(token.LESS) {
+		if _, err := p.consume(token.IDENTIFIER, "Expect superclass name."); err != nil {
+			return nil, err
+		}
+		superclass = &ast.ExprVar{Name: p.previous()}
+	}
+
 	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
 	if err != nil {
 		return nil, err
@@ -152,7 +160,7 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return &ast.Class{Name: name, Methods: methods}, nil
+	return &ast.Class{Name: name, Methods: methods, Superclass: superclass}, nil
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {
@@ -561,6 +569,17 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: p.previous().Literal}, nil
 	} else if p.match(token.THIS) {
 		return &ast.This{Keyword: p.previous()}, nil
+	} else if p.match(token.SUPER) {
+		keyword := p.previous()
+		_, err := p.consume(token.DOT, "Expect '.' after 'super'.")
+		if err != nil {
+			return nil, err
+		}
+		method, err := p.consume(token.IDENTIFIER, "Expect superclass method name.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Super{Keyword: keyword, Method: method}, nil
 	} else if p.match(token.IDENTIFIER) {
 		return &ast.ExprVar{Name: p.previous()}, nil
 	} else if p.match(token.LEFT_PAREN) {

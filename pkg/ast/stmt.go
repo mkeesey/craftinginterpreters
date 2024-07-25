@@ -57,6 +57,7 @@ func (b *Block) stmt() {}
 type Class struct {
 	Name *token.Token
 	Methods []*Function
+	Superclass *ExprVar
 }
 
 func (b *Class) stmt() {}

@@ -164,6 +164,28 @@ func (p *TreeWalkInterpreter) VisitSet(e *Set) interface{} {
 	panic("Only instances have fields")
 }
 
+func (p *TreeWalkInterpreter) VisitSuper(super *Super) interface{} {
+	distance := p.locals[super]
+	superVal := p.env.GetAt(distance, "super")
+	thisVal := p.env.GetAt(distance-1, "this")
+
+	superclass, ok := superVal.(*LoxClass)
+	if !ok {
+		panic(fmt.Sprintf("%s Could not convert super to LoxClass", super.Method.Lexeme))
+	}
+
+	this, ok := thisVal.(*LoxInstance)
+	if !ok {
+		panic(fmt.Sprintf("%s Could not convert this value to LoxInstance", super.Method.Lexeme))
+	}
+
+	method := superclass.findMethod(super.Method.Lexeme)
+	if method == nil {
+		panic(fmt.Sprintf("Undefined property '%s'", super.Method.Lexeme))
+	}
+	return method.Bind(this)
+}
+
 func (p *TreeWalkInterpreter) VisitThis(e *This) interface{} {
 	this, err := p.lookupVariable(e.Keyword, e)
 	if err != nil {
@@ -222,7 +244,21 @@ func (p *TreeWalkInterpreter) executeBlock(stmts []Stmt, env *Environment) {
 }
 
 func (p *TreeWalkInterpreter) VisitClass(class *Class) {
+	var superclass *LoxClass = nil
+	if class.Superclass != nil {
+		var ok bool
+		superclass, ok = p.evaluate(class.Superclass).(*LoxClass)
+		if !ok {
+			panic(fmt.Sprintf("%s Superclass must be a class", class.Superclass.Name.Lexeme))
+		}
+	}
+
 	p.env.Define(class.Name.Lexeme, nil)
+
+	if superclass != nil {
+		p.env = WithEnvironment(p.env)
+		p.env.Define("super", superclass)
+	}
 
 	methods := make(map[string]*LoxFunction)
 	for _, method := range class.Methods {
@@ -230,7 +266,12 @@ func (p *TreeWalkInterpreter) VisitClass(class *Class) {
 		methods[method.Name.Lexeme] = function
 	}
 
-	loxClass := NewLoxClass(class.Name.Lexeme, methods)
+	loxClass := NewLoxClass(class.Name.Lexeme, superclass, methods)
+
+	if superclass != nil {
+		p.env = p.env.enclosing
+	}
+
 	p.env.Assign(class.Name, loxClass)
 }
 

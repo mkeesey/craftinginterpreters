@@ -96,6 +96,13 @@ func main() {
 			},
 		},
 		{
+			"Super",
+			[]Field{
+				{"Keyword", "*token.Token"},
+				{"Method", "*token.Token"},
+			},
+		},
+		{
 			"This",
 			[]Field{
 				{"Keyword", "*token.Token"},
@@ -137,6 +144,7 @@ func main() {
 			[]Field{
 				{"Name", "*token.Token"},
 				{"Methods", "[]*Function"},
+				{"Superclass", "*ExprVar"},
 			},
 		},
 		{

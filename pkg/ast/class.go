@@ -3,12 +3,13 @@ package ast
 import "github.com/mkeesey/craftinginterpreters/pkg/token"
 
 type LoxClass struct {
-	name    string
-	methods map[string]*LoxFunction
+	name       string
+	superclass *LoxClass
+	methods    map[string]*LoxFunction
 }
 
-func NewLoxClass(name string, methods map[string]*LoxFunction) *LoxClass {
-	return &LoxClass{name: name, methods: methods}
+func NewLoxClass(name string, superclass *LoxClass, methods map[string]*LoxFunction) *LoxClass {
+	return &LoxClass{name: name, superclass: superclass, methods: methods}
 }
 
 func (l *LoxClass) Call(interpreter *TreeWalkInterpreter, arguments []interface{}) interface{} {
@@ -37,6 +38,10 @@ func (l *LoxClass) String() string {
 func (l *LoxClass) findMethod(name string) *LoxFunction {
 	if method, ok := l.methods[name]; ok {
 		return method
+	}
+
+	if l.superclass != nil {
+		return l.superclass.findMethod(name)
 	}
 
 	return nil
