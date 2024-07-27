@@ -114,7 +114,7 @@ func (r *Resolver) VisitExprVar(expr *ExprVar) interface{} {
 	if ok {
 		defined, declared := scope[expr.Name.Lexeme]
 		if declared && !defined {
-			r.reporter.Report(expr.Name.Line, expr.Name.Lexeme, "Can't read local variable in its own initializer.")
+			r.reporter.TokenError(expr.Name, "Can't read local variable in its own initializer.")
 		}
 	}
 
@@ -266,7 +266,7 @@ func (r *Resolver) declare(name *token.Token) {
 		return
 	}
 	if _, alreadyDeclared := scope[name.Lexeme]; alreadyDeclared {
-		r.reporter.Report(name.Line, name.Lexeme, "Variable with this name already declared in this scope")
+		r.reporter.TokenError(name, "Already a variable with this name in this scope.")
 	}
 	scope[name.Lexeme] = false
 }
