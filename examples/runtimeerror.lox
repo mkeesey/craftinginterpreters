@@ -1,1 +1,8 @@
+fun blah(a, b) {
+    print a;
+    print b;
+}
+
+blah("one", "two", "three");
+
 print "a" + 10;

@@ -337,7 +337,7 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	_, err = p.consume(token.SEMICOLON, "Expect ';' after value.")
+	_, err = p.consume(token.SEMICOLON, "Expect ';' after expression.")
 	if err != nil {
 		return nil, err
 	}
@@ -518,7 +518,7 @@ func (p *Parser) call() (ast.Expr, error) {
 				return nil, err
 			}
 		} else if p.match(token.DOT) {
-			name, err := p.consume(token.IDENTIFIER, "Expect property name after '.'")
+			name, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
 			if err != nil {
 				return nil, err
 			}

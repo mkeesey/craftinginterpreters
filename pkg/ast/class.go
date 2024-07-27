@@ -32,7 +32,7 @@ func (l *LoxClass) Arity() int {
 }
 
 func (l *LoxClass) String() string {
-	return "<class " + l.name + ">"
+	return l.name
 }
 
 func (l *LoxClass) findMethod(name string) *LoxFunction {
@@ -73,5 +73,5 @@ func (l *LoxInstance) Set(name *token.Token, value interface{}) {
 }
 
 func (l *LoxInstance) String() string {
-	return "<instance of " + l.class.name + ">"
+	return l.class.name + " instance"
 }

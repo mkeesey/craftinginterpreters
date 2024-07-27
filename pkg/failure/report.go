@@ -8,6 +8,11 @@ import (
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
+type RuntimeError struct {
+	Token   *token.Token
+	Message string
+}
+
 func Error(line int, message string) error {
 	return Report(line, "", message)
 }
@@ -63,8 +68,12 @@ func (r *Reporter) Panic(line int, err error) {
 
 func (r *Reporter) RuntimeError(panicmsg any) {
 	r.hasFailed = true
-	//TODO add lines
-	fmt.Fprintf(os.Stderr, "Error: %s\n", panicmsg)
+
+	if runtimeErr, ok := panicmsg.(RuntimeError); ok {
+		fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", runtimeErr.Message, runtimeErr.Token.Line)
+	} else {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", panicmsg)
+	}
 }
 
 func (r *Reporter) HasFailed() bool {

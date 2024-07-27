@@ -76,7 +76,7 @@ func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 			return leftStr + rightStr
 		}
 
-		panic(fmt.Sprintf("Cannot add operands %v %v", left, right))
+		panic(failure.RuntimeError{Token: e.Operator, Message: fmt.Sprintf("Cannot add operands %v %v.", left, right)})
 	case token.MINUS:
 		return requireFloat64(left) - requireFloat64(right)
 	case token.SLASH:
@@ -98,7 +98,7 @@ func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 		return left != right
 	}
 
-	panic(fmt.Sprintf("unknown operator type %s", e.Operator.Type))
+	panic(failure.RuntimeError{Token: e.Operator, Message: fmt.Sprintf("unknown operator type %s.", e.Operator.Type)})
 }
 
 func (p *TreeWalkInterpreter) VisitCall(e *Call) interface{} {
@@ -111,10 +111,10 @@ func (p *TreeWalkInterpreter) VisitCall(e *Call) interface{} {
 
 	function, ok := callee.(Callable)
 	if !ok {
-		panic("Can only call functions and classes")
+		panic(failure.RuntimeError{Token: e.Paren, Message: fmt.Sprintf("Can only call functions and classes.")})
 	}
 	if len(args) != function.Arity() {
-		panic(fmt.Sprintf("Expected %d arguments but got %d", function.Arity(), len(args)))
+		panic(failure.RuntimeError{Token: e.Paren, Message: fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args))})
 	}
 
 	ret := function.Call(p, args)
@@ -127,7 +127,7 @@ func (p *TreeWalkInterpreter) VisitGet(e *Get) interface{} {
 	if instance, ok := obj.(*LoxInstance); ok {
 		return instance.Get(e.Name)
 	}
-	panic("Only instances have properties")
+	panic(failure.RuntimeError{Token: e.Name, Message: "Only instances have properties."})
 }
 
 func (p *TreeWalkInterpreter) VisitGrouping(e *Grouping) interface{} {
@@ -161,7 +161,7 @@ func (p *TreeWalkInterpreter) VisitSet(e *Set) interface{} {
 		instance.Set(e.Name, value)
 		return value
 	}
-	panic("Only instances have fields")
+	panic(failure.RuntimeError{Token: e.Name, Message: "Only instances have fields."})
 }
 
 func (p *TreeWalkInterpreter) VisitSuper(super *Super) interface{} {
@@ -294,6 +294,9 @@ func (p *TreeWalkInterpreter) VisitIf(e *If) {
 
 func (p *TreeWalkInterpreter) VisitPrint(e *Print) {
 	val := p.evaluate(e.Expression)
+	if val == nil {
+		val = "nil"
+	}
 	fmt.Println(val)
 }
 
