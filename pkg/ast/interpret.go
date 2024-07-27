@@ -78,19 +78,19 @@ func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 
 		panic(failure.RuntimeError{Token: e.Operator, Message: fmt.Sprintf("Cannot add operands %v %v.", left, right)})
 	case token.MINUS:
-		return requireFloat64(left) - requireFloat64(right)
+		return requireFloat64(left, e.Operator) - requireFloat64(right, e.Operator)
 	case token.SLASH:
-		return requireFloat64(left) / requireFloat64(right)
+		return requireFloat64(left, e.Operator) / requireFloat64(right, e.Operator)
 	case token.STAR:
-		return requireFloat64(left) * requireFloat64(right)
+		return requireFloat64(left, e.Operator) * requireFloat64(right, e.Operator)
 	case token.GREATER:
-		return requireFloat64(left) > requireFloat64(right)
+		return requireFloat64(left, e.Operator) > requireFloat64(right, e.Operator)
 	case token.GREATER_EQUAL:
-		return requireFloat64(left) >= requireFloat64(right)
+		return requireFloat64(left, e.Operator) >= requireFloat64(right, e.Operator)
 	case token.LESS:
-		return requireFloat64(left) < requireFloat64(right)
+		return requireFloat64(left, e.Operator) < requireFloat64(right, e.Operator)
 	case token.LESS_EQUAL:
-		return requireFloat64(left) <= requireFloat64(right)
+		return requireFloat64(left, e.Operator) <= requireFloat64(right, e.Operator)
 	case token.EQUAL_EQUAL:
 		// TODO - ensure this matches lox requirements
 		return left == right
@@ -171,17 +171,17 @@ func (p *TreeWalkInterpreter) VisitSuper(super *Super) interface{} {
 
 	superclass, ok := superVal.(*LoxClass)
 	if !ok {
-		panic(fmt.Sprintf("%s Could not convert super to LoxClass", super.Method.Lexeme))
+		panic(failure.RuntimeError{Token: super.Keyword, Message: fmt.Sprintf("%s Could not convert super to LoxClass", super.Method.Lexeme)})
 	}
 
 	this, ok := thisVal.(*LoxInstance)
 	if !ok {
-		panic(fmt.Sprintf("%s Could not convert this value to LoxInstance", super.Method.Lexeme))
+		panic(failure.RuntimeError{Token: super.Keyword, Message: fmt.Sprintf("%s Could not convert this value to LoxInstance", super.Method.Lexeme)})
 	}
 
 	method := superclass.findMethod(super.Method.Lexeme)
 	if method == nil {
-		panic(fmt.Sprintf("Undefined property '%s'", super.Method.Lexeme))
+		panic(failure.RuntimeError{Token: super.Keyword, Message: fmt.Sprintf("Undefined property '%s'", super.Method.Lexeme)})
 	}
 	return method.Bind(this)
 }
@@ -202,11 +202,11 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 		val := isTruthy(right)
 		return !val
 	case token.MINUS:
-		val := requireFloat64(right)
+		val := requireFloat64(right, e.Operator)
 		return -val
 	}
 
-	panic(fmt.Sprintf("unknown operator type %s", e.Operator.Type))
+	panic(failure.RuntimeError{Token: e.Operator, Message: fmt.Sprintf("unknown operator type %s", e.Operator.Type)})
 }
 
 func (p *TreeWalkInterpreter) VisitExprVar(e *ExprVar) interface{} {
@@ -249,7 +249,7 @@ func (p *TreeWalkInterpreter) VisitClass(class *Class) {
 		var ok bool
 		superclass, ok = p.evaluate(class.Superclass).(*LoxClass)
 		if !ok {
-			panic(fmt.Sprintf("%s Superclass must be a class", class.Superclass.Name.Lexeme))
+			panic(failure.RuntimeError{Token: class.Name, Message: fmt.Sprintf("%s Superclass must be a class.", class.Superclass.Name.Lexeme)})
 		}
 	}
 
@@ -343,10 +343,10 @@ func isTruthy(value interface{}) bool {
 	return casted
 }
 
-func requireFloat64(value interface{}) float64 {
+func requireFloat64(value interface{}, token *token.Token) float64 {
 	val, ok := value.(float64)
 	if !ok {
-		panic(fmt.Sprintf("cannot cast %v to double", value))
+		panic(failure.RuntimeError{Token: token, Message: fmt.Sprintf("cannot cast %v to double.", value)})
 	}
 	return val
 }

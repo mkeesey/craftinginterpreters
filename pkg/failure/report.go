@@ -13,6 +13,10 @@ type RuntimeError struct {
 	Message string
 }
 
+func (r RuntimeError) Error() string {
+	return r.Message
+}
+
 func Error(line int, message string) error {
 	return Report(line, "", message)
 }

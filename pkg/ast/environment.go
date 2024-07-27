@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
 	"github.com/mkeesey/craftinginterpreters/pkg/token"
 )
 
@@ -40,7 +41,7 @@ func (e *Environment) Assign(tok *token.Token, value interface{}) error {
 		return e.enclosing.Assign(tok, value)
 	}
 
-	return fmt.Errorf("Undefined variable '%s'.", tok.Lexeme)
+	return failure.RuntimeError{Token: tok, Message: fmt.Sprintf("Undefined variable '%s'.", tok.Lexeme)}
 }
 
 func (e *Environment) AssignAt(distance int, tok *token.Token, value interface{}) error {
