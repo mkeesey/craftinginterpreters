@@ -222,7 +222,7 @@ func (p *TreeWalkInterpreter) lookupVariable(name *token.Token, expr Expr) (inte
 	if ok {
 		return p.env.GetAt(distance, name.Lexeme), nil
 	}
-	return p.globalEnv.Get(name.Lexeme)
+	return p.globalEnv.Get(name)
 }
 
 func (p *TreeWalkInterpreter) VisitBlock(e *Block) {

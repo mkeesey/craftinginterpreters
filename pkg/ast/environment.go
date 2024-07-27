@@ -50,8 +50,8 @@ func (e *Environment) AssignAt(distance int, tok *token.Token, value interface{}
 	return nil
 }
 
-func (e *Environment) Get(name string) (interface{}, error) {
-	val, ok := e.values[name]
+func (e *Environment) Get(name *token.Token) (interface{}, error) {
+	val, ok := e.values[name.Lexeme]
 	if ok {
 		return val, nil
 	}
@@ -60,7 +60,7 @@ func (e *Environment) Get(name string) (interface{}, error) {
 		return e.enclosing.Get(name)
 	}
 
-	return nil, fmt.Errorf("Undefined variable '%s'.", name)
+	return nil, failure.RuntimeError{Token: name, Message: fmt.Sprintf("Undefined variable '%s'.", name.Lexeme)}
 }
 
 func (e *Environment) GetAt(distance int, name string) interface{} {
