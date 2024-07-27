@@ -76,21 +76,21 @@ func (p *TreeWalkInterpreter) VisitBinary(e *Binary) interface{} {
 			return leftStr + rightStr
 		}
 
-		panic(failure.RuntimeError{Token: e.Operator, Message: fmt.Sprintf("Cannot add operands %v %v.", left, right)})
+		panic(failure.RuntimeError{Token: e.Operator, Message: "Operands must be two numbers or two strings."})
 	case token.MINUS:
-		return requireFloat64(left, e.Operator) - requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") - requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.SLASH:
-		return requireFloat64(left, e.Operator) / requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") / requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.STAR:
-		return requireFloat64(left, e.Operator) * requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") * requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.GREATER:
-		return requireFloat64(left, e.Operator) > requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") > requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.GREATER_EQUAL:
-		return requireFloat64(left, e.Operator) >= requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") >= requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.LESS:
-		return requireFloat64(left, e.Operator) < requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") < requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.LESS_EQUAL:
-		return requireFloat64(left, e.Operator) <= requireFloat64(right, e.Operator)
+		return requireFloat64(left, e.Operator, "Operands must be numbers.") <= requireFloat64(right, e.Operator, "Operands must be numbers.")
 	case token.EQUAL_EQUAL:
 		// TODO - ensure this matches lox requirements
 		return left == right
@@ -202,7 +202,7 @@ func (p *TreeWalkInterpreter) VisitUnary(e *Unary) interface{} {
 		val := isTruthy(right)
 		return !val
 	case token.MINUS:
-		val := requireFloat64(right, e.Operator)
+		val := requireFloat64(right, e.Operator, "Operand must be a number.")
 		return -val
 	}
 
@@ -249,7 +249,7 @@ func (p *TreeWalkInterpreter) VisitClass(class *Class) {
 		var ok bool
 		superclass, ok = p.evaluate(class.Superclass).(*LoxClass)
 		if !ok {
-			panic(failure.RuntimeError{Token: class.Name, Message: fmt.Sprintf("%s Superclass must be a class.", class.Superclass.Name.Lexeme)})
+			panic(failure.RuntimeError{Token: class.Name, Message: "Superclass must be a class."})
 		}
 	}
 
@@ -343,10 +343,10 @@ func isTruthy(value interface{}) bool {
 	return casted
 }
 
-func requireFloat64(value interface{}, token *token.Token) float64 {
+func requireFloat64(value interface{}, token *token.Token, msg string) float64 {
 	val, ok := value.(float64)
 	if !ok {
-		panic(failure.RuntimeError{Token: token, Message: fmt.Sprintf("cannot cast %v to double.", value)})
+		panic(failure.RuntimeError{Token: token, Message: msg})
 	}
 	return val
 }

@@ -86,9 +86,9 @@ func (r *Resolver) VisitSet(set *Set) interface{} {
 
 func (r *Resolver) VisitSuper(super *Super) interface{} {
 	if r.currClassType == classTypeNone {
-		r.reporter.TokenError(super.Keyword, "Cannot use 'super' outside of a class.")
+		r.reporter.TokenError(super.Keyword, "Can't use 'super' outside of a class.")
 	} else if r.currClassType != classTypeSubclass {
-		r.reporter.TokenError(super.Keyword, "Cannot use 'super' in a class with no superclass.")
+		r.reporter.TokenError(super.Keyword, "Can't use 'super' in a class with no superclass.")
 	}
 
 	r.resolveLocal(super, super.Keyword)
@@ -97,7 +97,7 @@ func (r *Resolver) VisitSuper(super *Super) interface{} {
 
 func (r *Resolver) VisitThis(this *This) interface{} {
 	if r.currClassType == classTypeNone {
-		r.reporter.TokenError(this.Keyword, "Cannot use 'this' outside of a class.")
+		r.reporter.TokenError(this.Keyword, "Can't use 'this' outside of a class.")
 		return nil
 	}
 	r.resolveLocal(this, this.Keyword)
@@ -114,7 +114,7 @@ func (r *Resolver) VisitExprVar(expr *ExprVar) interface{} {
 	if ok {
 		defined, declared := scope[expr.Name.Lexeme]
 		if declared && !defined {
-			r.reporter.Report(expr.Name.Line, expr.Name.Lexeme, "Cannot read local variable in its own initializer")
+			r.reporter.Report(expr.Name.Line, expr.Name.Lexeme, "Can't read local variable in its own initializer.")
 		}
 	}
 
@@ -140,7 +140,7 @@ func (r *Resolver) VisitClass(class *Class) {
 	if class.Superclass != nil {
 		r.currClassType = classTypeSubclass
 		if class.Name.Lexeme == class.Superclass.Name.Lexeme {
-			r.reporter.TokenError(class.Name, "A class cannot inherit from itself.")
+			r.reporter.TokenError(class.Name, "A class can't inherit from itself.")
 		}
 
 		r.resolveExpr(class.Superclass)
