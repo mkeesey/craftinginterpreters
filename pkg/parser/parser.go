@@ -10,12 +10,13 @@ import (
 )
 
 type Parser struct {
-	tokens  []*token.Token
-	current int
+	tokens   []*token.Token
+	current  int
+	reporter *failure.Reporter
 }
 
-func NewParser(tokens []*token.Token) *Parser {
-	return &Parser{tokens: tokens}
+func NewParser(tokens []*token.Token, reporter *failure.Reporter) *Parser {
+	return &Parser{tokens: tokens, reporter: reporter}
 }
 
 func (p *Parser) Parse() ([]ast.Stmt, error) {
@@ -510,6 +511,9 @@ func (p *Parser) unary() (ast.Expr, error) {
 
 func (p *Parser) call() (ast.Expr, error) {
 	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
 
 	for {
 		if p.match(token.LEFT_PAREN) {

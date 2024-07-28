@@ -38,9 +38,10 @@ func TestScanParse(t *testing.T) {
 			tokens := scan.ScanTokens()
 			require.False(t, reporter.HasFailed())
 
-			parser := parser.NewParser(tokens)
+			parser := parser.NewParser(tokens, reporter)
 			expr, err := parser.Parse()
 			require.NoError(t, err)
+			require.False(t, reporter.HasFailed())
 
 			expr = expr //TODO
 			// visitor := ast.PrintVisitor{}
