@@ -181,7 +181,7 @@ func (p *TreeWalkInterpreter) VisitSuper(super *Super) interface{} {
 
 	method := superclass.findMethod(super.Method.Lexeme)
 	if method == nil {
-		panic(failure.RuntimeError{Token: super.Keyword, Message: fmt.Sprintf("Undefined property '%s'", super.Method.Lexeme)})
+		panic(failure.RuntimeError{Token: super.Keyword, Message: fmt.Sprintf("Undefined property '%s'.", super.Method.Lexeme)})
 	}
 	return method.Bind(this)
 }

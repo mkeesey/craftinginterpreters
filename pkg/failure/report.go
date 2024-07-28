@@ -56,7 +56,11 @@ func (r *Reporter) TokenError(tok *token.Token, message string) {
 
 func (r *Reporter) Report(line int, where string, message string) {
 	whereStr := strings.TrimSuffix(where, "\n")
-	fmt.Fprintf(os.Stderr, "[line %d] Error %s: %s\n", line, whereStr, message)
+	if len(whereStr) > 0 {
+		fmt.Fprintf(os.Stderr, "[line %d] Error %s: %s\n", line, whereStr, message)
+	} else {
+		fmt.Fprintf(os.Stderr, "[line %d] Error: %s\n", line, message)
+	}
 	r.hasFailed = true
 }
 

@@ -128,7 +128,7 @@ func (s *Scanner) scanToken() error {
 		} else if isAlpha(rune) {
 			err = s.identifierToken()
 		} else {
-			s.reporter.Error(s.line, "unexpected character")
+			s.reporter.Error(s.line, "Unexpected character.")
 		}
 	}
 	return err
@@ -163,7 +163,7 @@ func (s *Scanner) stringToken() error {
 		bytes, err := s.reader.Peek(1)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				s.reporter.Report(s.line, s.currLexeme.String(), "unterminated string")
+				s.reporter.Error(s.line, "Unterminated string.")
 				return nil
 			}
 			s.reporter.Panic(s.line, err)
