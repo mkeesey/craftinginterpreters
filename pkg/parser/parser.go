@@ -411,7 +411,7 @@ func (p *Parser) or() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &ast.Logical{Left: expr, Operator: operator, Right: right}, nil
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr, err
@@ -432,7 +432,7 @@ func (p *Parser) and() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &ast.Logical{Left: expr, Operator: operator, Right: right}, nil
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr, err
