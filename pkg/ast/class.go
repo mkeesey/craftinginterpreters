@@ -1,6 +1,9 @@
 package ast
 
-import "github.com/mkeesey/craftinginterpreters/pkg/token"
+import (
+	"github.com/mkeesey/craftinginterpreters/pkg/failure"
+	"github.com/mkeesey/craftinginterpreters/pkg/token"
+)
 
 type LoxClass struct {
 	name       string
@@ -65,7 +68,7 @@ func (l *LoxInstance) Get(name *token.Token) interface{} {
 		return method.Bind(l)
 	}
 
-	panic("Undefined property '" + name.Lexeme + "'.")
+	panic(failure.RuntimeError{Token: name, Message: "Undefined property '" + name.Lexeme + "'."})
 }
 
 func (l *LoxInstance) Set(name *token.Token, value interface{}) {

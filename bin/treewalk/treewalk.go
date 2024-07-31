@@ -90,9 +90,6 @@ func run(reader io.Reader) error {
 
 	scan := scanner.NewScanner(reader, reporter)
 	tokens := scan.ScanTokens()
-	if reporter.HasFailed() {
-		return NewCompileError("")
-	}
 
 	parser := parser.NewParser(tokens, reporter)
 	statements, err := parser.Parse()
