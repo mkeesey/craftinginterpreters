@@ -30,10 +30,20 @@ func disassembleInstruction(chunk *Chunk, offset int) (int, error) {
 
 	instruction := OpCode(chunk.code[offset])
 	switch instruction {
-	case OP_RETURN:
-		return simpleInstruction("OP_RETURN", offset), nil
 	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", chunk, offset)
+	case OP_ADD:
+		return simpleInstruction("OP_ADD", offset), nil
+	case OP_SUBTRACT:
+		return simpleInstruction("OP_SUBTRACT", offset), nil
+	case OP_MULTIPLY:
+		return simpleInstruction("OP_MULTIPLY", offset), nil
+	case OP_DIVIDE:
+		return simpleInstruction("OP_DIVIDE", offset), nil
+	case OP_NEGATE:
+		return simpleInstruction("OP_NEGATE", offset), nil
+	case OP_RETURN:
+		return simpleInstruction("OP_RETURN", offset), nil
 	default:
 		fmt.Printf("Unknown opcode %d\n", instruction)
 		return offset + 1, errors.New("unknown opcode")
