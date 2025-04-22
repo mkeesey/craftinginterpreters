@@ -28,10 +28,13 @@ func NewVM() *VM {
 func (vm *VM) Free() {
 }
 
-func (vm *VM) Interpret(chunk *Chunk) error {
-	vm.chunk = chunk
-	vm.ip = 0
-	return vm.run()
+func (vm *VM) Interpret(source string) error {
+	// //vm.chunk = chunk
+	// vm.ip = 0
+	//return vm.run()
+	compile(source)
+
+	return nil
 }
 
 func (vm *VM) run() error {

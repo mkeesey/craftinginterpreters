@@ -1,6 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+
 	"github.com/mkeesey/craftinginterpreters/pkg/bytecode"
 )
 
@@ -8,37 +14,47 @@ func main() {
 	vm := bytecode.NewVM()
 	defer vm.Free()
 
-	bytecode.Debug = true
+	if len(os.Args) == 1 {
+		repl(vm)
+	} else if len(os.Args) == 2 {
+		runFile(vm, os.Args[1])
+	} else {
+		fmt.Println("Usage: clox [path]")
+		os.Exit(64)
+	}
+}
 
-	// Create a new chunk
-	chunk := bytecode.NewChunk()
+func repl(vm *bytecode.VM) error {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("> ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return fmt.Errorf("failed to read line: %w", err)
+		}
+		vm.Interpret(line)
+	}
+}
 
-	constant := chunk.WriteConstant(1.2)
-	chunk.Write(byte(bytecode.OP_CONSTANT), 123)
-	chunk.Write(byte(constant), 123)
-
-	constant = chunk.WriteConstant(3.4)
-	chunk.Write(byte(bytecode.OP_CONSTANT), 123)
-	chunk.Write(byte(constant), 123)
-
-	chunk.Write(byte(bytecode.OP_ADD), 123)
-
-	constant = chunk.WriteConstant(5.6)
-	chunk.Write(byte(bytecode.OP_CONSTANT), 123)
-	chunk.Write(byte(constant), 123)
-
-	chunk.Write(byte(bytecode.OP_DIVIDE), 123)
-	chunk.Write(byte(bytecode.OP_NEGATE), 123)
-
-	// Write an OP_RETURN instruction to the chunk
-	chunk.Write(byte(bytecode.OP_RETURN), 123)
-
-	err := vm.Interpret(chunk)
+func runFile(vm *bytecode.VM, path string) {
+	file, err := os.Open(path)
 	if err != nil {
-		//TODO
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error opening file: %v\n", err)
+		os.Exit(74)
+	}
+	defer file.Close()
+
+	sourceBytes, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+		os.Exit(74)
 	}
 
-	// Free the chunk's resources
-	chunk.Free()
+	if err := vm.Interpret(string(sourceBytes)); err != nil {
+		fmt.Fprintf(os.Stderr, "Error interpreting file: %v\n", err)
+		os.Exit(70)
+	}
 }
