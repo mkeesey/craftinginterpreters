@@ -29,12 +29,17 @@ func (vm *VM) Free() {
 }
 
 func (vm *VM) Interpret(source string) error {
-	// //vm.chunk = chunk
-	// vm.ip = 0
-	//return vm.run()
-	compile(source)
+	chunk := NewChunk()
 
-	return nil
+	err := compile(source, chunk)
+	if err != nil {
+		return fmt.Errorf("Interpret: %w", err)
+	}
+
+	vm.chunk = chunk
+	vm.ip = 0
+
+	return vm.run()
 }
 
 func (vm *VM) run() error {

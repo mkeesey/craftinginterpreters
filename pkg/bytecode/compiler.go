@@ -2,9 +2,12 @@ package bytecode
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"unicode"
-	"unicode/utf8"
 )
+
+var debugPrintCode = false
 
 type TokenType int
 
@@ -57,6 +60,8 @@ const (
 
 	TOKEN_ERROR
 	TOKEN_EOF
+
+	TOKEN_MAX
 )
 
 func (t TokenType) String() string {
@@ -161,273 +166,224 @@ type token struct {
 	line      int
 }
 
-type scanner struct {
-	line       int
-	startIdx   int
-	currentIdx int
-	source     string
+type precedence int
+
+const (
+	PREC_NONE       precedence = iota
+	PREC_ASSIGNMENT            // =
+	PREC_OR                    // or
+	PREC_AND                   // and
+	PREC_EQUALITY              // == !=
+	PREC_COMPARISON            // < > <= >=
+	PREC_TERM                  // + -
+	PREC_FACTOR                // * /
+	PREC_UNARY                 // ! -
+	PREC_CALL                  // . ()
+	PREC_PRIMARY
+)
+
+type parsefn func()
+
+type parserule struct {
+	prefix     parsefn
+	infix      parsefn
+	precedence precedence
 }
 
-func newScanner(source string) *scanner {
-	return &scanner{
-		line:       1,
-		startIdx:   0,
-		currentIdx: 0,
-		source:     source,
-	}
+type parser struct {
+	hadError       bool
+	panicMode      bool
+	rules          []parserule
+	scanner        *scanner
+	current        *token
+	previous       *token
+	compilingChunk *Chunk
 }
 
-func (s *scanner) scanToken() *token {
-	s.skipWhitespace()
-	s.startIdx = s.currentIdx
-	if s.isAtEnd() {
-		return s.makeToken(TOKEN_EOF)
+func newParser(scanner *scanner, chunk *Chunk) *parser {
+	parser := &parser{
+		scanner:        scanner,
+		compilingChunk: chunk,
 	}
 
-	r := s.advance()
-	if unicode.IsLetter(r) || r == '_' {
-		return s.identifier()
-	}
-	if unicode.IsDigit(r) {
-		return s.number()
+	rules := make([]parserule, TOKEN_MAX)
+
+	// Initialize all rules to nil functions and PREC_NONE by default
+	for i := range rules {
+		rules[i] = parserule{nil, nil, PREC_NONE}
 	}
 
-	switch r {
-	case '(':
-		return s.makeToken(TOKEN_LEFT_PAREN)
-	case ')':
-		return s.makeToken(TOKEN_RIGHT_PAREN)
-	case '{':
-		return s.makeToken(TOKEN_LEFT_BRACE)
-	case '}':
-		return s.makeToken(TOKEN_RIGHT_BRACE)
-	case ';':
-		return s.makeToken(TOKEN_SEMICOLON)
-	case ',':
-		return s.makeToken(TOKEN_COMMA)
-	case '.':
-		return s.makeToken(TOKEN_DOT)
-	case '-':
-		return s.makeToken(TOKEN_MINUS)
-	case '+':
-		return s.makeToken(TOKEN_PLUS)
-	case '/':
-		return s.makeToken(TOKEN_SLASH)
-	case '*':
-		return s.makeToken(TOKEN_STAR)
-	case '!':
-		if s.match('=') {
-			return s.makeToken(TOKEN_BANG_EQUAL)
-		}
-		return s.makeToken(TOKEN_BANG)
-	case '=':
-		if s.match('=') {
-			return s.makeToken(TOKEN_EQUAL_EQUAL)
-		}
-		return s.makeToken(TOKEN_EQUAL)
-	case '<':
-		if s.match('=') {
-			return s.makeToken(TOKEN_LESS_EQUAL)
-		}
-		return s.makeToken(TOKEN_LESS)
-	case '>':
-		if s.match('=') {
-			return s.makeToken(TOKEN_GREATER_EQUAL)
-		}
-	case '"':
-		return s.string()
-	}
+	// Set specific rules
+	rules[TOKEN_LEFT_PAREN] = parserule{parser.grouping, nil, PREC_NONE}
+	rules[TOKEN_MINUS] = parserule{parser.unary, parser.binary, PREC_TERM}
+	rules[TOKEN_PLUS] = parserule{nil, parser.binary, PREC_TERM}
+	rules[TOKEN_SLASH] = parserule{nil, parser.binary, PREC_FACTOR}
+	rules[TOKEN_STAR] = parserule{nil, parser.binary, PREC_FACTOR}
+	rules[TOKEN_NUMBER] = parserule{parser.number, nil, PREC_NONE}
 
-	return s.errorToken("Unrecognized character.")
+	parser.rules = rules
+	return parser
 }
 
-func (s *scanner) skipWhitespace() {
+func (p *parser) advance() {
+	p.previous = p.current
+
 	for {
-		r := s.peek()
-		switch r {
-		case ' ', '\r', '\t':
-			s.advance()
-		case '\n':
-			s.line++
-			s.advance()
-		case '/':
-			if s.peekNext() == '/' {
-				for s.peek() != '\n' && !s.isAtEnd() {
-					s.advance()
-				}
-			} else {
-				return
-			}
-		default:
-			return
-		}
-	}
-}
-
-func (s *scanner) string() *token {
-	for !s.isAtEnd() && s.peek() != '"' {
-		if s.peek() == '\n' {
-			s.line++
-		}
-		s.advance()
-	}
-
-	if s.isAtEnd() {
-		return s.errorToken("Unterminated string.")
-	}
-
-	s.advance() // The closing '"'.
-
-	return s.makeToken(TOKEN_STRING)
-}
-
-func (s *scanner) identifier() *token {
-	for isAlpha(s.peek()) || unicode.IsDigit(s.peek()) {
-		s.advance()
-	}
-	return s.makeToken(s.identifierType())
-}
-
-func (s *scanner) identifierType() TokenType {
-	switch s.source[s.startIdx] {
-	case 'a':
-		return s.checkKeyword(s.startIdx, 3, "and", TOKEN_AND)
-	case 'c':
-		return s.checkKeyword(s.startIdx, 5, "class", TOKEN_CLASS)
-	case 'e':
-		return s.checkKeyword(s.startIdx, 4, "else", TOKEN_ELSE)
-	case 'i':
-		return s.checkKeyword(s.startIdx, 2, "if", TOKEN_IF)
-	case 'n':
-		return s.checkKeyword(s.startIdx, 3, "nil", TOKEN_NIL)
-	case 'o':
-		return s.checkKeyword(s.startIdx, 2, "or", TOKEN_OR)
-	case 'p':
-		return s.checkKeyword(s.startIdx, 5, "print", TOKEN_PRINT)
-	case 'r':
-		return s.checkKeyword(s.startIdx, 6, "return", TOKEN_RETURN)
-	case 's':
-		return s.checkKeyword(s.startIdx, 5, "super", TOKEN_SUPER)
-	case 'v':
-		return s.checkKeyword(s.startIdx, 3, "var", TOKEN_VAR)
-	case 'w':
-		return s.checkKeyword(s.startIdx, 5, "while", TOKEN_WHILE)
-	case 'f':
-		if s.currentIdx-s.startIdx > 1 {
-			switch s.source[s.startIdx+1] {
-			case 'a':
-				return s.checkKeyword(s.startIdx, 4, "false", TOKEN_FALSE)
-			case 'o':
-				return s.checkKeyword(s.startIdx, 3, "for", TOKEN_FOR)
-			case 'u':
-				return s.checkKeyword(s.startIdx, 3, "fun", TOKEN_FUN)
-			}
-		}
-	case 't':
-		if s.currentIdx-s.startIdx > 1 {
-			switch s.source[s.startIdx+1] {
-			case 'h':
-				return s.checkKeyword(s.startIdx, 4, "this", TOKEN_THIS)
-			case 'r':
-				return s.checkKeyword(s.startIdx, 4, "true", TOKEN_TRUE)
-			}
-		}
-	}
-	return TOKEN_IDENTIFIER
-}
-
-func (s *scanner) checkKeyword(start int, length int, rest string, type_ TokenType) TokenType {
-	if s.currentIdx == start+length && s.source[start:start+length] == rest {
-		return type_
-	}
-	return TOKEN_IDENTIFIER
-}
-
-func (s *scanner) number() *token {
-	for unicode.IsDigit(s.peek()) {
-		s.advance()
-	}
-
-	if s.peek() == '.' && unicode.IsDigit(s.peekNext()) {
-		s.advance()
-		for unicode.IsDigit(s.peek()) {
-			s.advance()
-		}
-	}
-
-	return s.makeToken(TOKEN_NUMBER)
-}
-
-func (s *scanner) peek() rune {
-	r, _ := utf8.DecodeRuneInString(s.source[s.currentIdx:])
-	return r
-}
-
-func (s *scanner) peekNext() rune {
-	if s.isAtEnd() {
-		return 0
-	}
-	r, _ := utf8.DecodeRuneInString(s.source[s.currentIdx+1:])
-	return r
-}
-
-func (s *scanner) advance() rune {
-	r, size := utf8.DecodeRuneInString(s.source[s.currentIdx:])
-	s.currentIdx += size
-
-	return r
-}
-
-func (s *scanner) match(expected rune) bool {
-	if s.isAtEnd() {
-		return false
-	}
-	if s.source[s.currentIdx] != byte(expected) {
-		return false
-	}
-	s.currentIdx++
-	return true
-}
-
-func (s *scanner) makeToken(tokenType TokenType) *token {
-	lexeme := s.source[s.startIdx:s.currentIdx]
-	return &token{
-		tokenType: tokenType,
-		lexeme:    lexeme,
-		line:      s.line,
-	}
-}
-
-func (s *scanner) errorToken(message string) *token {
-	return &token{
-		tokenType: TOKEN_ERROR,
-		lexeme:    message,
-		line:      s.line,
-	}
-}
-
-func (s *scanner) isAtEnd() bool {
-	return s.currentIdx >= len(s.source)
-}
-
-func compile(source string) {
-	scanner := newScanner(source)
-	line := -1
-	for {
-		token := scanner.scanToken()
-		if token.line != line {
-			fmt.Printf("%4d ", token.line)
-			line = token.line
-		} else {
-			fmt.Print("   | ")
-		}
-
-		fmt.Printf("%s '%s'\n", token.tokenType, token.lexeme)
-
-		if token.tokenType == TOKEN_EOF {
+		p.current = p.scanner.scanToken()
+		if p.current.tokenType != TOKEN_ERROR {
 			break
 		}
+
+		p.errorAtCurrent(p.current.lexeme)
 	}
+}
+
+func (p *parser) consume(tokenType TokenType, msg string) {
+	if p.current.tokenType == tokenType {
+		p.advance()
+		return
+	}
+
+	p.errorAtCurrent(msg)
+}
+
+func (p *parser) end() {
+	p.emitByte(byte(OP_RETURN))
+
+	if debugPrintCode {
+		if !p.hadError {
+			DisassembleChunk(p.compilingChunk, "code")
+		}
+	}
+}
+
+func (p *parser) number() {
+	val, err := strconv.ParseFloat(p.previous.lexeme, 64)
+	if err != nil {
+		panic(err)
+	}
+	p.emitBytes(byte(OP_CONSTANT), byte(p.makeConstant(Value(val))))
+}
+
+func (p *parser) grouping() {
+	p.expression()
+	p.consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression")
+}
+
+func (p *parser) unary() {
+	opType := p.previous.tokenType
+
+	p.expression()
+
+	switch opType {
+	case TOKEN_MINUS:
+		p.emitByte(byte(OP_NEGATE))
+	default:
+		return // unreachable
+	}
+}
+
+func (p *parser) binary() {
+	opType := p.previous.tokenType
+	rule := p.getRule(opType)
+	p.parsePrecedence(rule.precedence + 1)
+
+	switch opType {
+	case TOKEN_PLUS:
+		p.emitByte(byte(OP_ADD))
+	case TOKEN_MINUS:
+		p.emitByte(byte(OP_SUBTRACT))
+	case TOKEN_STAR:
+		p.emitByte(byte(OP_MULTIPLY))
+	case TOKEN_SLASH:
+		p.emitByte(byte(OP_DIVIDE))
+	}
+}
+
+func (p *parser) parsePrecedence(precedence precedence) {
+	p.advance()
+	prefixRule := p.getRule(p.previous.tokenType).prefix
+	if prefixRule == nil {
+		p.error("Expect expression.")
+		return
+	}
+
+	prefixRule()
+
+	for precedence <= p.getRule(p.current.tokenType).precedence {
+		p.advance()
+		infixRule := p.getRule(p.previous.tokenType).infix
+		infixRule()
+	}
+}
+
+func (p *parser) getRule(tokenType TokenType) parserule {
+	return p.rules[tokenType]
+}
+
+func (p *parser) expression() {
+	p.parsePrecedence(PREC_ASSIGNMENT)
+}
+
+func (p *parser) makeConstant(val Value) uint8 {
+	constant := p.compilingChunk.WriteConstant(val)
+	if constant >= 255 { // TODO max uint8 size
+		p.error("Too many constants in one chunk.")
+		return 0
+	}
+
+	return constant
+}
+
+func (p *parser) emitByte(val byte) {
+	p.compilingChunk.Write(val, p.previous.line)
+}
+
+func (p *parser) emitBytes(valOne byte, valTwo byte) {
+	p.emitByte(valOne)
+	p.emitByte(valTwo)
+}
+
+func (p *parser) errorAtCurrent(msg string) {
+	p.errorAt(p.current, msg)
+}
+
+func (p *parser) error(msg string) {
+	p.errorAt(p.previous, msg)
+}
+
+func (p *parser) errorAt(tok *token, msg string) {
+	if p.panicMode {
+		return
+	}
+
+	p.panicMode = true
+	fmt.Fprintf(os.Stderr, "[line %d] Error", tok.line)
+
+	if tok.tokenType == TOKEN_EOF {
+		fmt.Fprintf(os.Stderr, " at end")
+	} else if tok.tokenType == TOKEN_ERROR {
+		// Nothing
+	} else {
+		fmt.Fprintf(os.Stderr, " at '%s'", tok.lexeme)
+	}
+
+	fmt.Fprintf(os.Stderr, ": %s\n", msg)
+	p.hadError = true
+}
+
+func compile(source string, chunk *Chunk) error {
+	scanner := newScanner(source)
+	parser := newParser(scanner, chunk)
+	parser.advance()
+	parser.expression()
+	parser.consume(TOKEN_EOF, "Expect end of expression")
+	parser.end()
+
+	if parser.hadError {
+		return fmt.Errorf("Parsing error")
+	}
+	return nil
 }
 
 func isAlpha(r rune) bool {
