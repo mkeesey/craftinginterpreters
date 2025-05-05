@@ -1,11 +1,15 @@
 package bytecode
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 var Debug = false
 
 var ErrInterpretError = fmt.Errorf("interpret error")
 var ErrRuntimeError = fmt.Errorf("runtime error")
+var InterpretRuntimeError = fmt.Errorf("interpret runtime error")
 
 const StackMax = 256
 
@@ -17,12 +21,18 @@ type VM struct {
 }
 
 func NewVM() *VM {
-	return &VM{
+	vm := &VM{
 		chunk:    nil,
 		stack:    [StackMax]Value{},
 		ip:       0,
 		stackIdx: 0,
 	}
+	vm.resetStack()
+	return vm
+}
+
+func (vm *VM) resetStack() {
+	vm.stackIdx = 0
 }
 
 func (vm *VM) Free() {
@@ -51,7 +61,7 @@ func (vm *VM) run() error {
 		if Debug {
 			fmt.Printf("         ")
 			for i := 0; i < vm.stackIdx; i++ {
-				fmt.Printf("[ %g ]", vm.stack[i])
+				fmt.Printf("[ %s ]", vm.stack[i])
 			}
 			fmt.Printf("\n")
 			disassembleInstruction(vm.chunk, vm.ip)
@@ -67,6 +77,20 @@ func (vm *VM) run() error {
 			}
 			constant := vm.chunk.constants[constantIndex]
 			vm.push(constant)
+		case OP_NIL:
+			vm.push(NilValue())
+		case OP_TRUE:
+			vm.push(BoolValue(true))
+		case OP_FALSE:
+			vm.push(BoolValue(false))
+		case OP_EQUAL:
+			b := vm.pop()
+			a := vm.pop()
+			vm.push(BoolValue(valuesEqual(a, b)))
+		case OP_GREATER:
+			vm.binaryOp(greater)
+		case OP_LESS:
+			vm.binaryOp(less)
 		case OP_ADD:
 			vm.binaryOp(add)
 		case OP_SUBTRACT:
@@ -75,10 +99,16 @@ func (vm *VM) run() error {
 			vm.binaryOp(multiply)
 		case OP_DIVIDE:
 			vm.binaryOp(divide)
+		case OP_NOT:
+			vm.push(isFalsy(vm.pop()))
 		case OP_NEGATE:
-			vm.push(-vm.pop())
+			if !vm.peek(0).IsNumber() {
+				vm.runtimeError("Operand must be a number.")
+				return InterpretRuntimeError
+			}
+			vm.push(NumberValue(-(vm.pop().AsNumber())))
 		case OP_RETURN:
-			fmt.Printf("%g\n", vm.pop())
+			fmt.Printf("%s\n", vm.pop())
 			return nil
 		default:
 			return ErrInterpretError
@@ -111,8 +141,39 @@ func (vm *VM) pop() Value {
 	return vm.stack[vm.stackIdx]
 }
 
-func (vm *VM) binaryOp(op func(a, b Value) Value) {
-	b := vm.pop()
-	a := vm.pop()
+func (vm *VM) peek(distance int) Value {
+	if vm.stackIdx == 0 {
+		panic("Stack underflow")
+	}
+	return vm.stack[vm.stackIdx-1-distance]
+}
+
+func (vm *VM) binaryOp(op func(a, b float64) Value) error {
+	if !vm.peek(0).IsNumber() || !vm.peek(1).IsNumber() {
+		vm.runtimeError("Operands must be numbers.")
+		return InterpretRuntimeError
+	}
+	b := vm.pop().AsNumber()
+	a := vm.pop().AsNumber()
 	vm.push(op(a, b))
+	return nil
+}
+
+func (vm *VM) runtimeError(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintf(os.Stderr, "\n")
+
+	line := vm.chunk.lines[vm.ip-1]
+	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+	vm.resetStack()
+}
+
+func isFalsy(value Value) Value {
+	if value.IsNil() {
+		return BoolValue(true)
+	}
+	if value.IsBool() {
+		return BoolValue(!value.AsBool())
+	}
+	return BoolValue(false)
 }

@@ -220,6 +220,16 @@ func newParser(scanner *scanner, chunk *Chunk) *parser {
 	rules[TOKEN_SLASH] = parserule{nil, parser.binary, PREC_FACTOR}
 	rules[TOKEN_STAR] = parserule{nil, parser.binary, PREC_FACTOR}
 	rules[TOKEN_NUMBER] = parserule{parser.number, nil, PREC_NONE}
+	rules[TOKEN_FALSE] = parserule{parser.literal, nil, PREC_NONE}
+	rules[TOKEN_TRUE] = parserule{parser.literal, nil, PREC_NONE}
+	rules[TOKEN_NIL] = parserule{parser.literal, nil, PREC_NONE}
+	rules[TOKEN_BANG] = parserule{parser.unary, nil, PREC_NONE}
+	rules[TOKEN_BANG_EQUAL] = parserule{nil, parser.binary, PREC_EQUALITY}
+	rules[TOKEN_EQUAL_EQUAL] = parserule{nil, parser.binary, PREC_EQUALITY}
+	rules[TOKEN_GREATER] = parserule{nil, parser.binary, PREC_COMPARISON}
+	rules[TOKEN_GREATER_EQUAL] = parserule{nil, parser.binary, PREC_COMPARISON}
+	rules[TOKEN_LESS] = parserule{nil, parser.binary, PREC_COMPARISON}
+	rules[TOKEN_LESS_EQUAL] = parserule{nil, parser.binary, PREC_COMPARISON}
 
 	parser.rules = rules
 	return parser
@@ -262,7 +272,20 @@ func (p *parser) number() {
 	if err != nil {
 		panic(err)
 	}
-	p.emitBytes(byte(OP_CONSTANT), byte(p.makeConstant(Value(val))))
+	p.emitBytes(byte(OP_CONSTANT), byte(p.makeConstant(NumberValue(val))))
+}
+
+func (p *parser) literal() {
+	switch p.previous.tokenType {
+	case TOKEN_FALSE:
+		p.emitByte(byte(OP_FALSE))
+	case TOKEN_TRUE:
+		p.emitByte(byte(OP_TRUE))
+	case TOKEN_NIL:
+		p.emitByte(byte(OP_NIL))
+	default:
+		return // unreachable
+	}
 }
 
 func (p *parser) grouping() {
@@ -278,6 +301,8 @@ func (p *parser) unary() {
 	switch opType {
 	case TOKEN_MINUS:
 		p.emitByte(byte(OP_NEGATE))
+	case TOKEN_BANG:
+		p.emitByte(byte(OP_NOT))
 	default:
 		return // unreachable
 	}
@@ -289,6 +314,18 @@ func (p *parser) binary() {
 	p.parsePrecedence(rule.precedence + 1)
 
 	switch opType {
+	case TOKEN_BANG_EQUAL:
+		p.emitBytes(byte(OP_EQUAL), byte(OP_NOT))
+	case TOKEN_EQUAL_EQUAL:
+		p.emitByte(byte(OP_EQUAL))
+	case TOKEN_GREATER:
+		p.emitByte(byte(OP_GREATER))
+	case TOKEN_GREATER_EQUAL:
+		p.emitBytes(byte(OP_LESS), byte(OP_NOT))
+	case TOKEN_LESS:
+		p.emitByte(byte(OP_LESS))
+	case TOKEN_LESS_EQUAL:
+		p.emitBytes(byte(OP_GREATER), byte(OP_NOT))
 	case TOKEN_PLUS:
 		p.emitByte(byte(OP_ADD))
 	case TOKEN_MINUS:

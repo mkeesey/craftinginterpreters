@@ -40,10 +40,24 @@ func disassembleInstruction(chunk *Chunk, offset int) (int, error) {
 		return simpleInstruction("OP_MULTIPLY", offset), nil
 	case OP_DIVIDE:
 		return simpleInstruction("OP_DIVIDE", offset), nil
+	case OP_NOT:
+		return simpleInstruction("OP_NOT", offset), nil
 	case OP_NEGATE:
 		return simpleInstruction("OP_NEGATE", offset), nil
 	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset), nil
+	case OP_NIL:
+		return simpleInstruction("OP_NIL", offset), nil
+	case OP_TRUE:
+		return simpleInstruction("OP_TRUE", offset), nil
+	case OP_FALSE:
+		return simpleInstruction("OP_FALSE", offset), nil
+	case OP_EQUAL:
+		return simpleInstruction("OP_EQUAL", offset), nil
+	case OP_GREATER:
+		return simpleInstruction("OP_GREATER", offset), nil
+	case OP_LESS:
+		return simpleInstruction("OP_LESS", offset), nil
 	default:
 		fmt.Printf("Unknown opcode %d\n", instruction)
 		return offset + 1, errors.New("unknown opcode")
@@ -61,6 +75,6 @@ func constantInstruction(name string, chunk *Chunk, offset int) (int, error) {
 		return offset, fmt.Errorf("constant index %d out of bounds", constantIndex)
 	}
 	constant := chunk.constants[constantIndex]
-	fmt.Printf("%s %g\n", name, constant)
+	fmt.Printf("%s %s\n", name, constant)
 	return offset + 2, nil
 }
